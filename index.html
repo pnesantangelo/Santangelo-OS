@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#23364d" />
+  <title>Santangelo OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WELCOME HOME</p>
+        <h1>Santangelo Home</h1>
+        <p id="todayDate" class="subtle"></p>
+      </div>
+      <div class="status-pill" id="systemStatus">Demo data</div>
+    </header>
+
+    <main id="app">
+      <section class="screen active" data-screen="home">
+        <div class="hero-grid">
+          <article class="card state-card">
+            <p class="card-label">TODAY</p>
+            <h2 id="stateName">Late Sports Night</h2>
+            <p id="dayLoad" class="large-subtext">Heavy day</p>
+          </article>
+
+          <article class="card next-card">
+            <p class="card-label">NEXT</p>
+            <h2 id="nextEvent">Gators Practice</h2>
+            <p id="nextTime" class="large-subtext">6:00 PM</p>
+            <p id="countdown" class="countdown">Leave in 1 hr 12 min</p>
+          </article>
+        </div>
+
+        <div class="home-grid">
+          <article class="card">
+            <p class="card-label">DINNER</p>
+            <h3 id="dinnerPlan">Use leftovers or a simple family meal</h3>
+            <p id="mealNote" class="subtle">Keep cleanup easy tonight.</p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">FAMILY FOCUS</p>
+            <h3 id="familyFocus">Protect tomorrow morning.</h3>
+            <p id="whatCanWait" class="subtle">Deep cleaning can wait.</p>
+          </article>
+        </div>
+
+        <article class="card ready-card">
+          <div class="section-title-row">
+            <div>
+              <p class="card-label">READY?</p>
+              <h3>Before you leave</h3>
+            </div>
+            <button class="secondary-btn" id="resetReady">Reset</button>
+          </div>
+          <div id="readyList" class="ready-list"></div>
+        </article>
+      </section>
+
+      <section class="screen" data-screen="family">
+        <div class="section-heading">
+          <p class="eyebrow">FAMILY</p>
+          <h2>Today for each person</h2>
+        </div>
+        <div id="familyCards" class="family-grid"></div>
+      </section>
+
+      <section class="screen" data-screen="today">
+        <div class="section-heading">
+          <p class="eyebrow">TODAY</p>
+          <h2>Schedule and decisions</h2>
+        </div>
+        <article class="card">
+          <p class="card-label">SCHEDULE</p>
+          <div id="scheduleList" class="timeline"></div>
+        </article>
+        <article class="card">
+          <p class="card-label">TODAY'S DECISIONS</p>
+          <div id="decisionList" class="decision-list"></div>
+        </article>
+      </section>
+
+      <section class="screen" data-screen="house">
+        <div class="section-heading">
+          <p class="eyebrow">HOUSE</p>
+          <h2>Home status</h2>
+        </div>
+        <div id="houseGrid" class="house-grid"></div>
+      </section>
+
+      <section class="screen" data-screen="more">
+        <div class="section-heading">
+          <p class="eyebrow">MORE</p>
+          <h2>System controls</h2>
+        </div>
+        <article class="card">
+          <label for="apiUrl">Apps Script Web App URL</label>
+          <input id="apiUrl" type="url" placeholder="Paste your deployed Apps Script URL" />
+          <div class="button-row">
+            <button id="saveApi" class="primary-btn">Save & refresh</button>
+            <button id="useDemo" class="secondary-btn">Use demo data</button>
+          </div>
+          <p class="subtle small">The URL stays only on this device.</p>
+        </article>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
+      <button class="nav-btn" data-target="family"><span>●</span>Family</button>
+      <button class="nav-btn" data-target="today"><span>▣</span>Today</button>
+      <button class="nav-btn" data-target="house"><span>⌂</span>House</button>
+      <button class="nav-btn" data-target="more"><span>•••</span>More</button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
