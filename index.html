@@ -52,6 +52,18 @@
           </article>
         </div>
 
+        <article class="card meal-plan-card">
+          <div class="section-title-row">
+            <div>
+              <p class="card-label">WEEKLY MEAL PLAN</p>
+              <h3 id="mealPlanWeek">Next week</h3>
+            </div>
+            <button class="secondary-btn" id="approveWeek">Approve week</button>
+          </div>
+          <div id="mealPlanSummary" class="meal-plan-summary"></div>
+          <p class="subtle small meal-plan-help">Green = ready, yellow = 1–2 items, red = 3+ items. Open Meals to rearrange or request another suggestion.</p>
+        </article>
+
         <article class="card calendar-card">
           <div class="section-title-row calendar-title-row">
             <div>
@@ -101,12 +113,13 @@
         </article>
       </section>
 
-      <section class="screen" data-screen="family">
+      <section class="screen" data-screen="meals">
         <div class="section-heading">
-          <p class="eyebrow">FAMILY</p>
-          <h2>Today for each person</h2>
+          <p class="eyebrow">MEALS</p>
+          <h2>Review this week</h2>
+          <p class="subtle">Approve, rearrange, or ask for another suggestion.</p>
         </div>
-        <div id="familyCards" class="family-grid"></div>
+        <div id="mealPlanEditor" class="meal-plan-editor"></div>
       </section>
 
       <section class="screen" data-screen="today">
@@ -151,7 +164,7 @@
 
     <nav class="bottom-nav">
       <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
-      <button class="nav-btn" data-target="family"><span>●</span>Family</button>
+      <button class="nav-btn" data-target="meals"><span>🍽</span>Meals</button>
       <button class="nav-btn" data-target="today"><span>▣</span>Today</button>
       <button class="nav-btn" data-target="house"><span>⌂</span>House</button>
       <button class="nav-btn" data-target="more"><span>•••</span>More</button>
