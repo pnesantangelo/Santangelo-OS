@@ -1,8 +1,8 @@
-# Santangelo OS Web v0.8
+# Santangelo OS Web v0.8.2
 
 This is the matched release containing all v0.7 recipe features, the v0.7.1 opaque recipe-panel fix, and the new spreadsheet-driven departure countdown/checklists.
 
-## New in v0.8
+## New in v0.8.1
 - The Home **Next** card calculates the next real departure instead of relying only on Daily Briefing text.
 - On active school days, the app counts down to the fixed **8:10 AM** school departure even though school is not placed on every child's calendar.
 - After the school departure passes, the app automatically switches to the next travel event that day.
@@ -34,3 +34,14 @@ The checklist content is editable immediately in the spreadsheet. Edit the `Acti
 - The app searches connected calendars for **First Day of School**, **Last Day of School**, and **No School/School Holiday** events. When dates are unavailable, it uses a seasonal fallback.
 - Travel minutes currently come from `Availability & Travel Rules`. Update the zero/default values there as you learn the real drive times.
 - Spectator lists are automatically applied when an event belongs to the Whole Family calendar. Additional attendance-specific logic can be added later.
+
+
+## Meal name mapping
+The Weekly Meal Plan now uses column AA (`Recipe Key`) for exact Meal Library lookup while keeping the friendly display name in the existing meal columns. Column AB stores an alternate recipe key. Edit the `Meal Name Map` sheet to add aliases when a friendly name differs from the Meal Library name.
+
+
+## New in v0.8.2
+- Missing ingredients can be confirmed during meal approval.
+- Each confirmed item may include the inventory name you actually use, such as `ham lunch meat` for `sliced ham`.
+- Confirmed ingredients are removed from the meal's missing count before approval.
+- Every confirmation is added to the editable `Inventory Review Queue` sheet for later inventory or alias cleanup.

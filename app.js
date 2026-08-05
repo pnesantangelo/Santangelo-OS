@@ -1,5 +1,5 @@
 const demoData={
-  apiVersion:'0.8.0',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.2',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
   departureKey:'demo-departure',
@@ -69,11 +69,11 @@ function renderTomorrowPrep(days){
 function renderMealPlan(){
  const plan=data.weeklyMealPlan||{days:[]}, days=plan.days||[];
  byId('mealPlanWeek').textContent=plan.weekOf?`Week of ${plan.weekOf}`:'Next week';
- byId('mealPlanSummary').innerHTML=days.length?days.map(d=>`<div class="meal-summary-row ${readinessClass(d)}"><strong>${esc(d.day.slice(0,3))}</strong>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="meal-name-link" data-recipe="${esc(d.meal)}">${esc(d.meal)}</button>`:`<span>${esc(d.meal||'No meal selected')}</span>`}<small>${readinessLabel(d)}</small></div>`).join(''):'<div class="subtle">No weekly plan has been generated yet.</div>';
+ byId('mealPlanSummary').innerHTML=days.length?days.map(d=>`<div class="meal-summary-row ${readinessClass(d)}"><strong>${esc(d.day.slice(0,3))}</strong>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="meal-name-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}">${esc(d.meal)}</button>`:`<span>${esc(d.meal||'No meal selected')}</span>`}<small>${readinessLabel(d)}</small></div>`).join(''):'<div class="subtle">No weekly plan has been generated yet.</div>';
  renderTomorrowPrep(days);
  byId('mealPlanEditor').innerHTML=days.length?days.map((d,i)=>`<article class="card meal-editor-card ${readinessClass(d)}" data-row="${d.row}">
-   <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="recipe-title-link" data-recipe="${esc(d.meal)}">${esc(d.meal)}</button>`:`<h3>${esc(d.meal||'No meal selected')}</h3>`}</div><span class="meal-status">${readinessLabel(d)}</span></div>
-   <p class="subtle">${esc(d.why||'')}</p>${d.missingItems?`<p class="missing-line"><strong>Need:</strong> ${esc(d.missingItems)}</p>`:''}
+   <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="recipe-title-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}">${esc(d.meal)}</button>`:`<h3>${esc(d.meal||'No meal selected')}</h3>`}</div><span class="meal-status">${readinessLabel(d)}</span></div>
+   <p class="subtle">${esc(d.why||'')}</p>${d.missingItems?`<div class="ingredient-review"><p class="missing-line"><strong>Currently marked missing:</strong></p>${splitRecipeList(d.missingItems).map((item,j)=>`<label class="ingredient-confirm-row"><input type="checkbox" data-have-item data-row="${d.row}" data-item="${esc(item)}"><span>I have ${esc(item)}</span><input class="ingredient-alias-input" data-have-as data-row="${d.row}" data-item-index="${j}" placeholder="Inventory name, e.g. ham lunch meat"></label>`).join('')}<p class="subtle small">Checked items will be removed from this meal's shopping needs and added to Inventory Review Queue for later cleanup.</p></div>`:''}
    <div class="meal-actions">
     <button class="primary-btn" data-action="approve" data-row="${d.row}" ${String(d.approval).toLowerCase()==='approved'?'disabled':''}>${String(d.approval).toLowerCase()==='approved'?'Approved ✓':'Approve'}</button>
     <button class="secondary-btn" data-action="alternate" data-row="${d.row}">Another idea</button>
@@ -82,18 +82,18 @@ function renderMealPlan(){
    </div>${d.alternateSuggestion?`<div class="alternate-box"><strong>Alternate:</strong> ${esc(d.alternateSuggestion)} <button class="link-btn" data-action="use-alternate" data-row="${d.row}">Use this</button></div>`:''}
   </article>`).join(''):'<article class="card"><p class="subtle">No plan yet.</p></article>';
  document.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',handleMealAction));
- document.querySelectorAll('[data-recipe]').forEach(btn=>btn.addEventListener('click',()=>openRecipe(btn.dataset.recipe)));
+ document.querySelectorAll('[data-recipe]').forEach(btn=>btn.addEventListener('click',()=>openRecipe(btn.dataset.recipe,btn.dataset.recipeDisplay||btn.textContent.trim())));
 }
 function splitRecipeList(text){return String(text||'').split(/;|\n|\u2022/).map(x=>x.trim()).filter(Boolean);}
 function closeRecipe(){const m=byId('recipeModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}
-async function openRecipe(meal){
+async function openRecipe(recipeKey,displayName){
  const modal=byId('recipeModal');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
- byId('recipeTitle').textContent=meal;byId('recipeContent').innerHTML='<p class="subtle">Loading recipe…</p>';
+ byId('recipeTitle').textContent=displayName||recipeKey;byId('recipeContent').innerHTML='<p class="subtle">Loading recipe…</p>';
  try{
   const base=localStorage.getItem('santangeloApiUrl');if(!base)throw new Error('Connect the Apps Script URL first.');
-  const u=new URL(base);u.searchParams.set('action','recipe');u.searchParams.set('meal',meal);
+  const u=new URL(base);u.searchParams.set('action','recipe');u.searchParams.set('recipeKey',recipeKey);
   const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Recipe could not be loaded.');
-  renderRecipe(j.recipe||{},meal);
+  renderRecipe(j.recipe||{},displayName||recipeKey);
  }catch(err){byId('recipeContent').innerHTML=`<div class="recipe-error"><strong>Recipe unavailable</strong><p>${esc(err.message)}</p></div>`;}
 }
 function renderRecipe(recipe,fallbackName){
@@ -127,7 +127,16 @@ async function handleMealAction(e){
  const btn=e.currentTarget,action=btn.dataset.action,days=data.weeklyMealPlan?.days||[];
  try{
   btn.disabled=true;
-  if(action==='approve')await apiAction('approveMeal',{row:Number(btn.dataset.row)});
+  if(action==='approve'){
+   const row=Number(btn.dataset.row);
+   const confirmed=[...document.querySelectorAll(`[data-have-item][data-row="${row}"]:checked`)].map((box,i)=>{
+    const all=[...document.querySelectorAll(`[data-have-item][data-row="${row}"]`)];
+    const index=all.indexOf(box);
+    const alias=document.querySelector(`[data-have-as][data-row="${row}"][data-item-index="${index}"]`)?.value.trim()||'';
+    return {ingredient:box.dataset.item,inventoryName:alias};
+   });
+   await apiAction('approveMeal',{row,confirmedItems:confirmed});
+  }
   if(action==='alternate')await apiAction('requestAlternate',{row:Number(btn.dataset.row)});
   if(action==='use-alternate')await apiAction('useAlternate',{row:Number(btn.dataset.row)});
   if(action==='up'||action==='down'){
