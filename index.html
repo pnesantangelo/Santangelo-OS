@@ -171,6 +171,21 @@
       </section>
     </main>
 
+
+    <div id="recipeModal" class="recipe-modal" aria-hidden="true">
+      <div class="recipe-backdrop" data-close-recipe></div>
+      <section class="recipe-panel" role="dialog" aria-modal="true" aria-labelledby="recipeTitle">
+        <div class="recipe-panel-header">
+          <div>
+            <p class="card-label">RECIPE</p>
+            <h2 id="recipeTitle">Recipe details</h2>
+          </div>
+          <button class="recipe-close" type="button" data-close-recipe aria-label="Close recipe">×</button>
+        </div>
+        <div id="recipeContent" class="recipe-content"><p class="subtle">Loading recipe…</p></div>
+      </section>
+    </div>
+
     <nav class="bottom-nav">
       <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
       <button class="nav-btn" data-target="meals"><span>🍽</span>Meals</button>
@@ -180,6 +195,6 @@
     </nav>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=0.7.0"></script>
 </body>
 </html>
