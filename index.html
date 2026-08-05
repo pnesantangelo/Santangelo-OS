@@ -52,18 +52,6 @@
           </article>
         </div>
 
-        <article class="card meal-plan-card">
-          <div class="section-title-row">
-            <div>
-              <p class="card-label">WEEKLY MEAL PLAN</p>
-              <h3 id="mealPlanWeek">Next week</h3>
-            </div>
-            <button class="secondary-btn" id="approveWeek">Approve week</button>
-          </div>
-          <div id="mealPlanSummary" class="meal-plan-summary"></div>
-          <p class="subtle small meal-plan-help">Green = ready, yellow = 1–2 items, red = 3+ items. Open Meals to rearrange or request another suggestion.</p>
-        </article>
-
         <article class="card calendar-card">
           <div class="section-title-row calendar-title-row">
             <div>
@@ -114,11 +102,32 @@
       </section>
 
       <section class="screen" data-screen="meals">
-        <div class="section-heading">
-          <p class="eyebrow">MEALS</p>
-          <h2>Review this week</h2>
-          <p class="subtle">Approve, rearrange, or ask for another suggestion.</p>
+        <div class="section-heading meals-heading-row">
+          <div>
+            <p class="eyebrow">MEALS</p>
+            <h2 id="mealPlanWeek">Review this week</h2>
+            <p class="subtle">Approve, rearrange, or ask for another suggestion.</p>
+          </div>
+          <button class="secondary-btn" id="approveWeek">Approve week</button>
         </div>
+
+        <article class="card meal-plan-card">
+          <p class="card-label">WEEK AT A GLANCE</p>
+          <div id="mealPlanSummary" class="meal-plan-summary"></div>
+          <p class="subtle small meal-plan-help">Green = everything confirmed, yellow = 1–2 items, red = 3+ items.</p>
+        </article>
+
+        <article class="card tomorrow-prep-card">
+          <div class="section-title-row">
+            <div>
+              <p class="card-label">BEFORE BED</p>
+              <h3 id="tomorrowPrepTitle">Prep for tomorrow</h3>
+            </div>
+            <span id="tomorrowPrepStatus" class="prep-time-badge"></span>
+          </div>
+          <div id="tomorrowPrepList" class="prep-checklist"></div>
+        </article>
+
         <div id="mealPlanEditor" class="meal-plan-editor"></div>
       </section>
 

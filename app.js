@@ -1,5 +1,5 @@
 const demoData={
-  apiVersion:'0.5.0',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.6.0',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min'},
   dinner:{plan:'Use leftovers or a simple family meal',note:'Keep cleanup easy tonight.'},
@@ -37,10 +37,39 @@ function renderFourWeekCalendar(){
  const cells=days.map(day=>{const events=(day.events||[]).map(ev=>`<div class="calendar-event person-${calendarPersonClass(ev.person)}" title="${esc(ev.title)}"><span class="event-time">${esc(ev.time||'')}</span>${esc(ev.title)}</div>`).join('');return `<div class="calendar-day ${day.isToday?'is-today':''}"><div class="calendar-date"><span>${esc(day.dayNumber)}</span><small>${esc(day.monthLabel||'')}</small></div><div class="calendar-events">${events||'<span class="no-events">—</span>'}</div></div>`;}).join('');
  byId('fourWeekCalendar').innerHTML=`<div class="calendar-weekdays">${headers}</div><div class="calendar-days">${cells}</div>`;
 }
+
+function dateKey(value){
+ const d=new Date(value);
+ return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function nextMealDay(days){
+ if(!days.length)return null;
+ const now=new Date();now.setHours(0,0,0,0);
+ const tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);
+ const exact=days.find(d=>dateKey(d.date)===dateKey(tomorrow));
+ if(exact)return exact;
+ return days.find(d=>{const x=new Date(d.date);return !Number.isNaN(x.getTime())&&x>now;})||days[0];
+}
+function prepItems(day){
+ if(!day)return [];
+ const raw=[day.prepAction,day.notes].filter(Boolean).join('; ');
+ const parts=raw.split(/;|\n|\u2022/).map(x=>x.trim()).filter(Boolean);
+ return [...new Set(parts)].slice(0,6);
+}
+function renderTomorrowPrep(days){
+ const day=nextMealDay(days);
+ byId('tomorrowPrepTitle').textContent=day?`${day.day}: ${day.meal||'Meal not selected'}`:'No next-day meal yet';
+ byId('tomorrowPrepStatus').textContent=day?.reminderTime||'';
+ const items=prepItems(day);
+ byId('tomorrowPrepList').innerHTML=items.length?items.map((item,i)=>`<label class="prep-item"><input type="checkbox" data-prep-key="${esc((day?.date||'')+'-'+i)}"><span>${esc(item)}</span></label>`).join(''):'<p class="subtle">Nothing needs to be done tonight.</p>';
+ const saved=JSON.parse(localStorage.getItem('santangeloMealPrep')||'{}');
+ document.querySelectorAll('[data-prep-key]').forEach(box=>{box.checked=!!saved[box.dataset.prepKey];box.addEventListener('change',()=>{saved[box.dataset.prepKey]=box.checked;localStorage.setItem('santangeloMealPrep',JSON.stringify(saved));});});
+}
 function renderMealPlan(){
  const plan=data.weeklyMealPlan||{days:[]}, days=plan.days||[];
  byId('mealPlanWeek').textContent=plan.weekOf?`Week of ${plan.weekOf}`:'Next week';
  byId('mealPlanSummary').innerHTML=days.length?days.map(d=>`<div class="meal-summary-row ${readinessClass(d)}"><strong>${esc(d.day.slice(0,3))}</strong><span>${esc(d.meal||'No meal selected')}</span><small>${readinessLabel(d)}</small></div>`).join(''):'<div class="subtle">No weekly plan has been generated yet.</div>';
+ renderTomorrowPrep(days);
  byId('mealPlanEditor').innerHTML=days.length?days.map((d,i)=>`<article class="card meal-editor-card ${readinessClass(d)}" data-row="${d.row}">
    <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p><h3>${esc(d.meal||'No meal selected')}</h3></div><span class="meal-status">${readinessLabel(d)}</span></div>
    <p class="subtle">${esc(d.why||'')}</p>${d.missingItems?`<p class="missing-line"><strong>Need:</strong> ${esc(d.missingItems)}</p>`:''}
