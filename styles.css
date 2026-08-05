@@ -242,3 +242,8 @@ input {
 .ingredient-confirm-row input[type=checkbox]{width:18px;height:18px}
 .ingredient-alias-input{width:100%;padding:9px 10px;border:1px solid rgba(91,74,60,.22);border-radius:10px;background:#fff;color:inherit}
 @media(max-width:640px){.ingredient-confirm-row{grid-template-columns:auto 1fr}.ingredient-alias-input{grid-column:2}}
+
+/* v0.8.3 ingredient review */
+.ingredient-review-row{display:grid;grid-template-columns:minmax(180px,1.4fr) auto auto minmax(170px,1fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(91,74,60,.10)}
+.ingredient-review-row:last-of-type{border-bottom:0}.ingredient-review-row label{display:flex;align-items:center;gap:6px;white-space:nowrap}.ingredient-review-row input[type=radio]{width:18px;height:18px}.ingredient-name{font-weight:750;color:var(--navy)}
+@media(max-width:760px){.ingredient-review-row{grid-template-columns:1fr 1fr}.ingredient-name{grid-column:1/-1}.ingredient-alias-input{grid-column:1/-1}}

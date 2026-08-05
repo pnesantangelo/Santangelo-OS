@@ -69,11 +69,11 @@ function renderTomorrowPrep(days){
 function renderMealPlan(){
  const plan=data.weeklyMealPlan||{days:[]}, days=plan.days||[];
  byId('mealPlanWeek').textContent=plan.weekOf?`Week of ${plan.weekOf}`:'Next week';
- byId('mealPlanSummary').innerHTML=days.length?days.map(d=>`<div class="meal-summary-row ${readinessClass(d)}"><strong>${esc(d.day.slice(0,3))}</strong>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="meal-name-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}">${esc(d.meal)}</button>`:`<span>${esc(d.meal||'No meal selected')}</span>`}<small>${readinessLabel(d)}</small></div>`).join(''):'<div class="subtle">No weekly plan has been generated yet.</div>';
+ byId('mealPlanSummary').innerHTML=days.length?days.map(d=>`<div class="meal-summary-row ${readinessClass(d)}"><strong>${esc(d.day.slice(0,3))}</strong>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="meal-name-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}" data-recipe-row="${d.row}">${esc(d.meal)}</button>`:`<span>${esc(d.meal||'No meal selected')}</span>`}<small>${readinessLabel(d)}</small></div>`).join(''):'<div class="subtle">No weekly plan has been generated yet.</div>';
  renderTomorrowPrep(days);
  byId('mealPlanEditor').innerHTML=days.length?days.map((d,i)=>`<article class="card meal-editor-card ${readinessClass(d)}" data-row="${d.row}">
-   <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="recipe-title-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}">${esc(d.meal)}</button>`:`<h3>${esc(d.meal||'No meal selected')}</h3>`}</div><span class="meal-status">${readinessLabel(d)}</span></div>
-   <p class="subtle">${esc(d.why||'')}</p>${d.missingItems?`<div class="ingredient-review"><p class="missing-line"><strong>Currently marked missing:</strong></p>${splitRecipeList(d.missingItems).map((item,j)=>`<label class="ingredient-confirm-row"><input type="checkbox" data-have-item data-row="${d.row}" data-item="${esc(item)}"><span>I have ${esc(item)}</span><input class="ingredient-alias-input" data-have-as data-row="${d.row}" data-item-index="${j}" placeholder="Inventory name, e.g. ham lunch meat"></label>`).join('')}<p class="subtle small">Checked items will be removed from this meal's shopping needs and added to Inventory Review Queue for later cleanup.</p></div>`:''}
+   <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="recipe-title-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}" data-recipe-row="${d.row}">${esc(d.meal)}</button>`:`<h3>${esc(d.meal||'No meal selected')}</h3>`}</div><span class="meal-status">${readinessLabel(d)}</span></div>
+   <p class="subtle">${esc(d.why||'')}</p>${(d.reviewItems||[]).length&&String(d.approval).toLowerCase()!=='approved'?`<div class="ingredient-review"><p class="missing-line"><strong>Review every ingredient the OS could not confirm:</strong></p>${(d.reviewItems||[]).map((item,j)=>`<div class="ingredient-review-row" data-review-row="${d.row}" data-review-item="${esc(item)}"><span class="ingredient-name">${esc(item)}</span><label><input type="radio" name="ingredient-${d.row}-${j}" value="have"> I have it</label><label><input type="radio" name="ingredient-${d.row}-${j}" value="need"> Need to buy</label><input class="ingredient-alias-input" data-have-as placeholder="Stored as… (optional)"></div>`).join('')}<p class="subtle small">Every item must be marked. Only items marked <strong>Need to buy</strong> remain on the shopping list. Items marked <strong>I have it</strong> go to Inventory Review Queue.</p></div>`:(String(d.approval).toLowerCase()==='approved'&&d.missingItems?`<div class="ingredient-review reviewed-needs"><p><strong>Reviewed and still needed:</strong> ${esc(d.missingItems)}</p><button class="secondary-btn" data-action="add-needed" data-row="${d.row}">Add these to grocery list</button></div>`:'')}
    <div class="meal-actions">
     <button class="primary-btn" data-action="approve" data-row="${d.row}" ${String(d.approval).toLowerCase()==='approved'?'disabled':''}>${String(d.approval).toLowerCase()==='approved'?'Approved ✓':'Approve'}</button>
     <button class="secondary-btn" data-action="alternate" data-row="${d.row}">Another idea</button>
@@ -82,25 +82,26 @@ function renderMealPlan(){
    </div>${d.alternateSuggestion?`<div class="alternate-box"><strong>Alternate:</strong> ${esc(d.alternateSuggestion)} <button class="link-btn" data-action="use-alternate" data-row="${d.row}">Use this</button></div>`:''}
   </article>`).join(''):'<article class="card"><p class="subtle">No plan yet.</p></article>';
  document.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',handleMealAction));
- document.querySelectorAll('[data-recipe]').forEach(btn=>btn.addEventListener('click',()=>openRecipe(btn.dataset.recipe,btn.dataset.recipeDisplay||btn.textContent.trim())));
+ document.querySelectorAll('[data-recipe]').forEach(btn=>btn.addEventListener('click',()=>openRecipe(btn.dataset.recipe,btn.dataset.recipeDisplay||btn.textContent.trim(),Number(btn.dataset.recipeRow||0))));
 }
 function splitRecipeList(text){return String(text||'').split(/;|\n|\u2022/).map(x=>x.trim()).filter(Boolean);}
 function closeRecipe(){const m=byId('recipeModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}
-async function openRecipe(recipeKey,displayName){
+async function openRecipe(recipeKey,displayName,row){
  const modal=byId('recipeModal');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
  byId('recipeTitle').textContent=displayName||recipeKey;byId('recipeContent').innerHTML='<p class="subtle">Loading recipe…</p>';
  try{
   const base=localStorage.getItem('santangeloApiUrl');if(!base)throw new Error('Connect the Apps Script URL first.');
   const u=new URL(base);u.searchParams.set('action','recipe');u.searchParams.set('recipeKey',recipeKey);
   const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Recipe could not be loaded.');
-  renderRecipe(j.recipe||{},displayName||recipeKey);
+  renderRecipe(j.recipe||{},displayName||recipeKey,(data.weeklyMealPlan?.days||[]).find(d=>Number(d.row)===Number(row)));
  }catch(err){byId('recipeContent').innerHTML=`<div class="recipe-error"><strong>Recipe unavailable</strong><p>${esc(err.message)}</p></div>`;}
 }
-function renderRecipe(recipe,fallbackName){
+function renderRecipe(recipe,fallbackName,planDay){
  const ingredients=splitRecipeList(recipe.requiredIngredients||recipe.coreIngredients);
  const optional=splitRecipeList(recipe.optionalIngredients);
  const instructions=splitRecipeList(recipe.instructions||recipe.notes);
- const missing=splitRecipeList(recipe.missingItems);
+ const reviewed=String(planDay?.approval||'').toLowerCase()==='approved';
+ const missing=reviewed?splitRecipeList(planDay?.missingItems):splitRecipeList(recipe.missingItems);
  byId('recipeTitle').textContent=recipe.name||fallbackName;
  byId('recipeContent').innerHTML=`
   <div class="recipe-meta">
@@ -113,7 +114,7 @@ function renderRecipe(recipe,fallbackName){
   <section class="recipe-section"><h3>Ingredients</h3>${ingredients.length?`<ul>${ingredients.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="subtle">Ingredients have not been added to the Meal Library yet.</p>'}${optional.length?`<h4>Optional</h4><ul>${optional.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</section>
   <section class="recipe-section"><h3>Directions</h3>${instructions.length?`<ol>${instructions.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:'<p class="subtle">Detailed directions are not yet stored for this meal. The available Meal Library notes are shown when present.</p>'}</section>
   ${(recipe.thawInstructions||recipe.servingDayIngredients||recipe.batchPrepNotes)?`<section class="recipe-section recipe-prep-section"><h3>Make-ahead and serving notes</h3>${recipe.thawInstructions?`<p><strong>Thaw:</strong> ${esc(recipe.thawInstructions)}</p>`:''}${recipe.servingDayIngredients?`<p><strong>Serving day:</strong> ${esc(recipe.servingDayIngredients)}</p>`:''}${recipe.batchPrepNotes?`<p><strong>Batch prep:</strong> ${esc(recipe.batchPrepNotes)}</p>`:''}</section>`:''}
-  ${missing.length?`<section class="recipe-section"><h3>Still needed</h3><p>${esc(missing.join(', '))}</p><button class="secondary-btn" id="addRecipeMissing">Add missing items to grocery list</button></section>`:''}
+  ${missing.length?`<section class="recipe-section"><h3>${reviewed?'Reviewed and still needed':'Ingredient review needed'}</h3><p>${esc(missing.join(', '))}</p>${reviewed?'<button class="secondary-btn" id="addRecipeMissing">Add reviewed items to grocery list</button>':'<p class="subtle">Review these ingredients from the weekly meal card before adding anything to the grocery list.</p>'}</section>`:''}
   <div class="recipe-actions"><button class="primary-btn" id="markRecipeCooked">Mark cooked</button><label class="rating-label" for="recipeRating">Family rating<select id="recipeRating"><option value="">Choose</option><option value="5">5 — Loved it</option><option value="4">4 — Good</option><option value="3">3 — Okay</option><option value="2">2 — Not a favorite</option><option value="1">1 — Never again</option></select></label><button class="secondary-btn" id="saveRecipeRating">Save rating</button></div>`;
  byId('markRecipeCooked')?.addEventListener('click',async()=>{await recipeAction('markCooked',{meal:recipe.name||fallbackName});closeRecipe();await refreshFromApi();});
  byId('saveRecipeRating')?.addEventListener('click',async()=>{const rating=byId('recipeRating').value;if(!rating)return alert('Choose a rating first.');await recipeAction('rateMeal',{meal:recipe.name||fallbackName,rating:Number(rating)});alert('Rating saved.');});
@@ -129,14 +130,16 @@ async function handleMealAction(e){
   btn.disabled=true;
   if(action==='approve'){
    const row=Number(btn.dataset.row);
-   const confirmed=[...document.querySelectorAll(`[data-have-item][data-row="${row}"]:checked`)].map((box,i)=>{
-    const all=[...document.querySelectorAll(`[data-have-item][data-row="${row}"]`)];
-    const index=all.indexOf(box);
-    const alias=document.querySelector(`[data-have-as][data-row="${row}"][data-item-index="${index}"]`)?.value.trim()||'';
-    return {ingredient:box.dataset.item,inventoryName:alias};
+   const reviewRows=[...document.querySelectorAll(`[data-review-row="${row}"]`)];
+   const reviewedItems=reviewRows.map(el=>{
+    const chosen=el.querySelector('input[type="radio"]:checked');
+    return {ingredient:el.dataset.reviewItem,status:chosen?.value||'',inventoryName:el.querySelector('[data-have-as]')?.value.trim()||''};
    });
-   await apiAction('approveMeal',{row,confirmedItems:confirmed});
+   const unreviewed=reviewedItems.filter(x=>!x.status);
+   if(unreviewed.length){alert(`Please mark every ingredient as I have it or Need to buy. Remaining: ${unreviewed.map(x=>x.ingredient).join(', ')}`);btn.disabled=false;return;}
+   await apiAction('approveMeal',{row,reviewedItems});
   }
+  if(action==='add-needed'){const row=Number(btn.dataset.row),day=days.find(d=>Number(d.row)===row),items=splitRecipeList(day?.missingItems);if(!items.length){alert('There are no reviewed grocery items for this meal.');btn.disabled=false;return;}await apiAction('addMissingToGrocery',{meal:day?.recipeKey||day?.meal||'',items});alert('Reviewed items added to the grocery list.');}
   if(action==='alternate')await apiAction('requestAlternate',{row:Number(btn.dataset.row)});
   if(action==='use-alternate')await apiAction('useAlternate',{row:Number(btn.dataset.row)});
   if(action==='up'||action==='down'){
