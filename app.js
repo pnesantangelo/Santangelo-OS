@@ -1,9 +1,10 @@
 const demoData={
-  apiVersion:'0.7.0',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.0',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
-  nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min'},
+  nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
+  departureKey:'demo-departure',
   dinner:{plan:'Use leftovers or a simple family meal',note:'Keep cleanup easy tonight.'},
-  readiness:[{name:'Carson',detail:'Phone, water, uniform',ready:false},{name:'Nathan',detail:'Water, mouthguard, flags',ready:false},{name:'Addison',detail:'Activity bag, water, gear',ready:false},{name:'Mom',detail:'Field bag, keys, water',ready:false},{name:'Dad',detail:'Coach bag or project gear',ready:false}],
+  readiness:[{id:'demo-1',name:'Carson',detail:'Cleats and flags/belt',required:'Yes',ready:false},{id:'demo-2',name:'Nathan',detail:'Mouthguard and uniform',required:'Yes',ready:false},{id:'demo-3',name:'Erin',detail:'Phone, keys, and wallet',required:'Yes',ready:false}],
   people:[],schedule:[],decisions:['Buy now: paper towels, spray stain remover, mustard, salami.'],
   shopping:{buyNow:[{item:'Paper towels'}],buySoon:[{item:'Chicken breast'}],dontBuy:[{item:'Ground beef'}],byStore:{}},
   householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
@@ -141,14 +142,24 @@ async function apiAction(action,payload={}){
  const r=await fetch(base,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
  if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Update failed');return j;
 }
+function updateDepartureCountdown(){
+ const el=byId('countdown'),iso=data.nextDeparture?.departureAt;
+ if(!el||!iso)return;
+ const diff=new Date(iso)-new Date();
+ if(diff<=0){el.textContent='Time to leave';return;}
+ const total=Math.ceil(diff/60000),h=Math.floor(total/60),m=total%60;
+ el.textContent=h?`Leave in ${h} hr${h===1?'':'s'}${m?' '+m+' min':''}`:`Leave in ${m} min`;
+}
 function render(){
  const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
  byId('stateName').textContent=data.state||'Normal Day';byId('dayLoad').textContent=`${data.dayLoad||'Normal'} day`;
- byId('nextEvent').textContent=data.nextDeparture?.title||'Nothing scheduled';byId('nextTime').textContent=data.nextDeparture?.time||'';byId('countdown').textContent=data.nextDeparture?.leaveText||'';
+ byId('nextEvent').textContent=data.nextDeparture?.title||'Nothing scheduled';byId('nextTime').textContent=data.nextDeparture?.time||'';byId('countdown').textContent=data.nextDeparture?.leaveText||'';updateDepartureCountdown();
  byId('dinnerPlan').textContent=data.dinner?.plan||'No meal planned';byId('mealNote').textContent=data.dinner?.note||'';byId('familyFocus').textContent=data.familyFocus||'';byId('whatCanWait').textContent=data.whatCanWait||'';
  byId('buyNowList').innerHTML=listHtml(data.shopping?.buyNow,'Nothing urgent');byId('buySoonList').innerHTML=listHtml(data.shopping?.buySoon,'Nothing needed next trip');byId('dontBuyList').innerHTML=listHtml((data.shopping?.dontBuy||[]).slice(0,6),'No stocked items yet');
- const saved=JSON.parse(localStorage.getItem('santangeloReady')||'{}');byId('readyList').innerHTML=(data.readiness||[]).map((x,i)=>{const r=saved[x.name]??x.ready;return `<div class="ready-item ${r?'ready':''}" data-ready-index="${i}"><div><div class="ready-name">${esc(x.name)}</div><div class="ready-status">${r?'Ready ✓':'Tap when ready'}</div></div><div class="subtle small">${esc(x.detail||'')}</div></div>`}).join('');
- document.querySelectorAll('[data-ready-index]').forEach(el=>el.onclick=()=>{const x=data.readiness[+el.dataset.readyIndex],s=JSON.parse(localStorage.getItem('santangeloReady')||'{}');s[x.name]=!(s[x.name]??x.ready);localStorage.setItem('santangeloReady',JSON.stringify(s));render();});
+ const readyStoreKey='santangeloReady:'+String(data.departureKey||'current');
+ const saved=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');
+ byId('readyList').innerHTML=(data.readiness||[]).length?(data.readiness||[]).map((x,i)=>{const itemKey=x.id||`${x.name}|${x.detail}`,r=saved[itemKey]??x.ready;return `<div class="ready-item ${r?'ready':''}" data-ready-index="${i}"><div><div class="ready-name">${esc(x.name)}</div><div class="ready-status">${r?'Ready ✓':esc(x.required==='Optional'?'Optional':'Tap when packed')}</div></div><div class="subtle small">${esc(x.detail||'')}</div></div>`}).join(''):'<div class="subtle">Nothing needs to be packed for another departure today.</div>';
+ document.querySelectorAll('[data-ready-index]').forEach(el=>el.onclick=()=>{const x=data.readiness[+el.dataset.readyIndex],itemKey=x.id||`${x.name}|${x.detail}`,store=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');store[itemKey]=!(store[itemKey]??x.ready);localStorage.setItem(readyStoreKey,JSON.stringify(store));render();});
  byId('scheduleList').innerHTML=(data.schedule||[]).map(x=>`<div class="timeline-item"><div class="timeline-time">${esc(x.time)}</div><div>${esc(x.title)}</div></div>`).join('');
  byId('decisionList').innerHTML=(data.decisions||[]).map(x=>`<div class="decision-item">${esc(x)}</div>`).join('');
  renderMealPlan();renderFourWeekCalendar();
@@ -157,4 +168,4 @@ function render(){
 async function refreshFromApi(){const base=localStorage.getItem('santangeloApiUrl');if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector(`[data-screen="${b.dataset.target}"]`).classList.add('active');});
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady');render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||'';refreshFromApi();setInterval(refreshFromApi,5*60*1000);
+byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||'';refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);

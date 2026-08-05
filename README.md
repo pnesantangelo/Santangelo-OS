@@ -1,17 +1,36 @@
-# Santangelo OS Web v0.7
+# Santangelo OS Web v0.8
 
-## New in v0.7
-- Approved meal names open a recipe detail panel.
-- Recipe panel shows ingredients, available directions, timing, substitutions, thaw and batch-prep notes.
-- Mark Cooked updates Last Served and the weekly plan status.
-- Family rating writes back to Meal Library.
-- Missing recipe ingredients can be added to Grocery List for Smart & Final.
-- The Meals tab keeps the weekly review and Before Bed prep checklist.
+This is the matched release containing all v0.7 recipe features, the v0.7.1 opaque recipe-panel fix, and the new spreadsheet-driven departure countdown/checklists.
 
-## Deploy
-1. Replace the GitHub Pages files with index.html, styles.css, and app.js.
-2. Replace WebApi.gs in Apps Script.
-3. Save and redeploy the existing web-app deployment as a new version.
-4. Hard-refresh the browser after GitHub Pages finishes publishing.
+## New in v0.8
+- The Home **Next** card calculates the next real departure instead of relying only on Daily Briefing text.
+- On active school days, the app counts down to the fixed **8:10 AM** school departure even though school is not placed on every child's calendar.
+- After the school departure passes, the app automatically switches to the next travel event that day.
+- Departure times include activity arrival/setup buffers from **Availability & Travel Rules**.
+- Baseball games use the family's 70-minute early-arrival rule.
+- The **Before you leave** list is loaded from **Departure Checklists** and matched by activity, person, and role.
+- Participant, spectator, student, and driver checklist layers can be edited in the spreadsheet.
+- Checklist completion is saved separately for each departure on the current device.
+- When no departure remains, the app shows **No more departures today**.
 
-Note: The recipe view can only display the directions currently stored in the Meal Library Notes field. Recipes with brief imported notes will show those notes until more detailed directions are added to the library.
+## Spreadsheet tabs used
+- Departure Checklists
+- Departure Rules
+- Availability & Travel Rules
+- Calendar Setup
+- Sports Season Manager
+
+The checklist content is editable immediately in the spreadsheet. Edit the `Active?` column to disable an item without deleting it.
+
+## Deployment
+1. Upload/replace `index.html`, `styles.css`, and `app.js` in the GitHub Pages repository.
+2. Replace the existing Apps Script `WebApi.gs` with the included `WebApi.gs`.
+3. Save Apps Script.
+4. Choose **Deploy > Manage deployments > Edit**.
+5. Select **New version**, then deploy while keeping the existing deployment URL.
+6. Hard-refresh the web app after GitHub Pages publishes.
+
+## Notes
+- The app searches connected calendars for **First Day of School**, **Last Day of School**, and **No School/School Holiday** events. When dates are unavailable, it uses a seasonal fallback.
+- Travel minutes currently come from `Availability & Travel Rules`. Update the zero/default values there as you learn the real drive times.
+- Spectator lists are automatically applied when an event belongs to the Whole Family calendar. Additional attendance-specific logic can be added later.
