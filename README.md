@@ -1,30 +1,26 @@
-# Santangelo OS Web v0.8.5.1
+# Santangelo OS Web v0.8.5.2
 
-## Home / wall display
-- Removes shopping summaries from Home.
-- Adds Home Health, Family Ready, and Day Load gauges at the top.
-- Keeps next departure, today's dinner, departure checklist, and next four weeks calendar.
-- Adds a portrait wall-display mode for Yodeck: open `https://pnesantangelo.github.io/Santangelo-OS/?mode=wall`.
-- Adds configurable time/weather header. Set Weather city once in More.
+This is a compatibility and calendar-fix patch for the portrait Yodeck/Raspberry Pi display.
 
-## Shopping
-- Adds a dedicated Shopping tab and Quick Add input.
-- Merges active Grocery List rows with inventory-driven needs.
-- Purchased items disappear from the active web view immediately.
-- Records Quantity Bought and writes purchases to Purchase History.
-- Auto-updates inventory only when an existing Kitchen Inventory or Household Staples item/alias can be matched. One-time purchases are not turned into inventory items.
+## Fixes
+
+- Replaces `structuredClone()` with an older-Chromium-safe JSON clone so Yodeck does not freeze on the static Demo data / Loading weather screen.
+- Keeps the built-in Apps Script `/exec` default and Yorba Linda, CA weather default.
+- Keeps hourly weather refresh and the five-day high/low/rain forecast.
+- Makes portrait wall-mode detection slightly more tolerant on kiosk displays.
+- Fixes Google Calendar all-day events appearing on both the event date and the following day. Google Calendar uses an exclusive end date for all-day events.
 
 ## Deploy
-1. Replace `index.html`, `styles.css`, and `app.js` in the existing GitHub Pages repository.
-2. Replace Apps Script `WebApi.gs` with this package's `WebApi.gs`.
-3. Deploy a new version of the existing Apps Script web app; keep the same `/exec` URL.
-4. Hard refresh the web app.
-5. For Yodeck use the wall URL above.
 
+### GitHub Pages
+Replace:
+- `index.html`
+- `styles.css`
+- `app.js`
 
-## v0.8.5.1 patch
-- Built-in default Apps Script /exec connection for zero-setup displays.
-- Default weather location: Yorba Linda, CA.
-- Automatic portrait wall mode; use ?mode=app to force the normal interface.
-- Five-day forecast with highs, lows, and rain chance/dry indicator.
-- Weather refreshes hourly.
+Commit/publish, then refresh the Yodeck webpage.
+
+### Apps Script
+Replace `WebApi.gs` and deploy a **new version of the existing web app deployment**. Keep the same `/exec` URL.
+
+The Apps Script redeploy is required for the all-day calendar fix.

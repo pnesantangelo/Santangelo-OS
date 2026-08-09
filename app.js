@@ -2,7 +2,7 @@ const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7w
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
 
 const demoData={
-  apiVersion:'0.8.5.1',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.5.2',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
   departureKey:'demo-departure',
@@ -21,7 +21,8 @@ const demoData={
     {row:10,date:'8/16/2026',day:'Sunday',meal:'Favorite Half Turkey / Half Beef Meatloaf',readiness:'Quick Shop',missingCount:1,missingItems:'Ground turkey',approval:'Draft',why:'Family dinner with leftovers'}
   ]}
 };
-let data=structuredClone(demoData);
+function cloneDemoData(){return JSON.parse(JSON.stringify(demoData));}
+let data=cloneDemoData();
 const byId=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function listHtml(items,empty){return items&&items.length?items.map(x=>`<div class="compact-item">${esc(x.item||x)}</div>`).join(''):`<div class="subtle">${empty}</div>`;}
@@ -207,7 +208,7 @@ async function refreshWeather(){
  }catch(e){label.textContent='Weather unavailable';if(forecast)forecast.innerHTML='';}
 }
 async function addShoppingItem(){const item=byId('shoppingItem').value.trim();if(!item)return;const status=byId('shoppingAddStatus');try{status.textContent='Adding…';await apiAction('addShoppingItem',{item,quantity:byId('shoppingQty').value.trim()||'1',store:byId('shoppingStore').value.trim(),category:byId('shoppingCategory').value.trim(),source:'Web App'});byId('shoppingItem').value='';byId('shoppingQty').value='';status.textContent='Added.';await refreshFromApi();}catch(e){status.textContent='Could not add: '+e.message;}}
-function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=500;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
+function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=420;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
 
 function render(){
  const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});updateClock();
@@ -222,7 +223,7 @@ function render(){
  renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
-async function refreshFromApi(){const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
+async function refreshFromApi(){const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base){data=cloneDemoData();byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=cloneDemoData();render();}}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector(`[data-screen="${b.dataset.target}"]`).classList.add('active');});
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
 byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL;byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
