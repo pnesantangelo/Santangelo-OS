@@ -2,7 +2,7 @@ const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7w
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
 
 const demoData={
-  apiVersion:'0.8.5.2',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.6',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
   departureKey:'demo-departure',
@@ -10,7 +10,7 @@ const demoData={
   readiness:[{id:'demo-1',name:'Carson',detail:'Cleats and flags/belt',required:'Yes',ready:false},{id:'demo-2',name:'Nathan',detail:'Mouthguard and uniform',required:'Yes',ready:false},{id:'demo-3',name:'Erin',detail:'Phone, keys, and wallet',required:'Yes',ready:false}],
   people:[],schedule:[],decisions:['Buy now: paper towels, spray stain remover, mustard, salami.'],
   shopping:{active:[{id:'demo-1',item:'Sour cream',quantity:'1',store:'Smart & Final',category:'Dairy',reason:'Meal ingredient',source:'Grocery List',trackInventory:'Auto',inventoryMatch:''},{id:'demo-2',item:'Chicken breast',quantity:'4 lb',store:"Sam's Club",category:'Inventory',reason:'Low inventory',source:'Inventory',trackInventory:'Auto',inventoryMatch:'Chicken breast'}],buyNow:[{item:'Paper towels'}],buySoon:[{item:'Chicken breast'}],dontBuy:[{item:'Ground beef'}],byStore:{}},
-  homeHealth:{percent:62,completed:5,total:8,label:'5 of 8 chores complete'},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
+  homeHealth:{percent:62,completed:5,total:8,label:'5 of 8 chore points complete'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
   weeklyMealPlan:{weekOf:'Aug 10',status:'Draft',days:[
     {row:4,date:'8/10/2026',day:'Monday',meal:'Pool & Pizza Party',readiness:'Ready',missingCount:0,missingItems:'',approval:'Approved',why:'Calendar override'},
     {row:5,date:'8/11/2026',day:'Tuesday',meal:'Honey Garlic Grilled Chicken',readiness:'Ready',missingCount:0,missingItems:'',approval:'Draft',why:'Cook once, use twice'},
@@ -21,8 +21,7 @@ const demoData={
     {row:10,date:'8/16/2026',day:'Sunday',meal:'Favorite Half Turkey / Half Beef Meatloaf',readiness:'Quick Shop',missingCount:1,missingItems:'Ground turkey',approval:'Draft',why:'Family dinner with leftovers'}
   ]}
 };
-function cloneDemoData(){return JSON.parse(JSON.stringify(demoData));}
-let data=cloneDemoData();
+let data=structuredClone(demoData);
 const byId=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function listHtml(items,empty){return items&&items.length?items.map(x=>`<div class="compact-item">${esc(x.item||x)}</div>`).join(''):`<div class="subtle">${empty}</div>`;}
@@ -195,6 +194,24 @@ function renderShopping(){
  root.innerHTML=Object.keys(stores).sort().map(store=>`<section class="shopping-store-group"><div class="shopping-store-title"><h3>${esc(store)}</h3><span>${stores[store].length} item${stores[store].length===1?'':'s'}</span></div>${stores[store].map(shoppingItemHtml).join('')}</section>`).join('');
  document.querySelectorAll('[data-shop-bought]').forEach(btn=>btn.addEventListener('click',async()=>{const card=btn.closest('[data-shopping-id]'),item=items.find(x=>String(x.id)===String(card.dataset.shoppingId));if(!item)return;const qtyBought=card.querySelector('[data-shop-qty]').value.trim()||'1',trackInventory=card.querySelector('[data-shop-track]').value;try{btn.disabled=true;btn.textContent='Saving…';await apiAction('markShoppingPurchased',{id:item.id,row:item.row||0,item:item.item,source:item.source||'',quantityBought:qtyBought,trackInventory,inventoryMatch:item.inventoryMatch||'',store:item.store||'',category:item.category||'',unit:item.unit||''});await refreshFromApi();}catch(err){alert('Could not mark purchased: '+err.message);btn.disabled=false;btn.textContent='Bought ✓';}}));
 }
+function choreRowHtml(chore){
+ const complete=!!chore.complete, count=Number(chore.count||0), target=Number(chore.target||0), weekly=chore.period==='week';
+ const progress=target?`${Math.min(count,target)}/${target}`:(count?`${count} logged`:'Available');
+ const members=(data.chores?.familyMembers||['Erin','Phillip','Carson','Nathan','Addison']);
+ const options=['<option value="">Who did it?</option>',...members.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`)].join('');
+ const actionLabel=complete?(weekly?'Completed ✓':'Done ✓'):'✓ Complete';
+ return `<div class="chore-row ${complete?'is-complete':''}" data-chore-id="${esc(chore.id)}"><div class="chore-main"><div class="chore-name">${esc(chore.name)}</div><div class="chore-meta">${esc(chore.area||'')} · ${esc(chore.frequency||'')} · ${progress}${chore.estimatedMinutes?` · ${esc(chore.estimatedMinutes)} min`:''}</div>${chore.lastCompletedBy?`<span class="chore-person-last">Last: ${esc(chore.lastCompletedBy)}${chore.lastCompletedAt?` · ${esc(chore.lastCompletedAt)}`:''}</span>`:''}</div><select class="chore-person-select" data-chore-person>${options}</select><div><button type="button" class="primary-btn chore-complete-btn ${complete?'done':''}" data-chore-complete ${complete?'disabled':''}>${actionLabel}</button>${complete&&weekly?'<button type="button" class="chore-extra-btn" data-chore-again>Log another completion</button>':''}</div></div>`;
+}
+function choreSectionHtml(title,subtitle,chores){return `<section class="chore-section"><div class="chore-section-title"><h3>${esc(title)}</h3><span class="subtle small">${esc(subtitle)}</span></div><div class="chore-list">${chores.length?chores.map(choreRowHtml).join(''):'<div class="chore-empty">Nothing in this group.</div>'}</div></section>`;}
+function renderChores(){
+ const c=data.chores||{daily:[],weekly:[],asNeeded:[],summary:{}};const sum=c.summary||{};
+ const totalDaily=Number(sum.dailyTotal||0),doneDaily=Number(sum.dailyDone||0),totalWeekly=Number(sum.weeklyTotal||0),doneWeekly=Number(sum.weeklyDone||0);
+ byId('choreWeekLabel').textContent=c.weekLabel||'';
+ byId('choreSummary').innerHTML=`<article class="card chore-summary-card"><p class="card-label">TODAY</p><h3>${doneDaily} / ${totalDaily}</h3><p class="subtle small">daily chores complete</p></article><article class="card chore-summary-card"><p class="card-label">THIS WEEK</p><h3>${doneWeekly} / ${totalWeekly}</h3><p class="subtle small">weekly minimums complete</p></article><article class="card chore-summary-card"><p class="card-label">HOME HEALTH</p><h3>${data.homeHealth?.total?`${data.homeHealth.percent}%`:'—'}</h3><p class="subtle small">${esc(data.homeHealth?.label||'')}</p></article>`;
+ byId('choreBoard').innerHTML=choreSectionHtml('Daily','Resets every day',c.daily||[])+choreSectionHtml('This week','Weekly progress resets Monday',c.weekly||[])+choreSectionHtml('As needed','Available anytime; not counted against Home Health',c.asNeeded||[]);
+ document.querySelectorAll('[data-chore-complete],[data-chore-again]').forEach(btn=>btn.addEventListener('click',async()=>{const row=btn.closest('[data-chore-id]'),chore=[...(c.daily||[]),...(c.weekly||[]),...(c.asNeeded||[])].find(x=>String(x.id)===String(row.dataset.choreId));const person=row.querySelector('[data-chore-person]').value;if(!person){alert('Choose who completed the chore first.');return;}try{btn.disabled=true;btn.textContent='Saving…';await apiAction('completeChore',{chore:chore.name,person:person});await refreshFromApi();}catch(e){alert('Could not save chore: '+e.message);btn.disabled=false;btn.textContent='✓ Complete';}}));
+}
+
 function updateClock(){const el=byId('currentTime');if(el)el.textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
 function weatherCodeLabel(code){if(code===0)return'Sunny';if(code<=3)return'Partly cloudy';if(code<=48)return'Foggy';if(code<=67)return'Rain';if(code<=77)return'Snow';if(code<=82)return'Showers';if(code<=99)return'Thunderstorms';return'Weather';}
 function weatherCodeIcon(code){if(code===0)return'☀️';if(code<=3)return'⛅';if(code<=48)return'🌫️';if(code<=67)return'🌧️';if(code<=77)return'❄️';if(code<=82)return'🌦️';if(code<=99)return'⛈️';return'🌤️';}
@@ -208,7 +225,7 @@ async function refreshWeather(){
  }catch(e){label.textContent='Weather unavailable';if(forecast)forecast.innerHTML='';}
 }
 async function addShoppingItem(){const item=byId('shoppingItem').value.trim();if(!item)return;const status=byId('shoppingAddStatus');try{status.textContent='Adding…';await apiAction('addShoppingItem',{item,quantity:byId('shoppingQty').value.trim()||'1',store:byId('shoppingStore').value.trim(),category:byId('shoppingCategory').value.trim(),source:'Web App'});byId('shoppingItem').value='';byId('shoppingQty').value='';status.textContent='Added.';await refreshFromApi();}catch(e){status.textContent='Could not add: '+e.message;}}
-function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=420;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
+function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=500;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
 
 function render(){
  const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});updateClock();
@@ -220,10 +237,10 @@ function render(){
  document.querySelectorAll('[data-ready-index]').forEach(el=>el.onclick=()=>{const x=data.readiness[+el.dataset.readyIndex],itemKey=x.id||`${x.name}|${x.detail}`,store=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');store[itemKey]=!(store[itemKey]??x.ready);localStorage.setItem(readyStoreKey,JSON.stringify(store));render();});
  byId('scheduleList').innerHTML=(data.schedule||[]).map(x=>`<div class="timeline-item"><div class="timeline-time">${esc(x.time)}</div><div>${esc(x.title)}</div></div>`).join('');
  byId('decisionList').innerHTML=(data.decisions||[]).map(x=>`<div class="decision-item">${esc(x)}</div>`).join('');
- renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();
+ renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();renderChores();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
-async function refreshFromApi(){const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base){data=cloneDemoData();byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=cloneDemoData();render();}}
+async function refreshFromApi(){const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector(`[data-screen="${b.dataset.target}"]`).classList.add('active');});
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
 byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL;byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);

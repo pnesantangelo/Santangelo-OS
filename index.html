@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=0.8.6" />
 </head>
 <body>
   <div class="app-shell">
@@ -150,9 +150,20 @@
       </section>
 
       <section class="screen" data-screen="house">
-        <div class="section-heading">
-          <p class="eyebrow">HOUSE</p>
-          <h2>Home status</h2>
+        <div class="section-heading house-heading">
+          <div>
+            <p class="eyebrow">HOUSE</p>
+            <h2>Chores & home status</h2>
+          </div>
+          <div id="choreWeekLabel" class="subtle small"></div>
+        </div>
+        <div id="choreSummary" class="chore-summary"></div>
+        <div id="choreBoard" class="chore-board"></div>
+        <div class="section-heading house-systems-heading">
+          <div>
+            <p class="eyebrow">HOME SYSTEMS</p>
+            <h2>Stock & household status</h2>
+          </div>
         </div>
         <div id="houseGrid" class="house-grid"></div>
       </section>
@@ -201,6 +212,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=0.8.5.2"></script>
+  <script src="app.js?v=0.8.6"></script>
 </body>
 </html>

@@ -91,7 +91,7 @@ h3 { font-size: clamp(1.25rem, 2vw, 1.8rem); margin-bottom: 8px; }
 }
 .ready-list {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 14px;
   margin-top: 18px;
 }
@@ -178,7 +178,7 @@ input {
   box-shadow: var(--shadow);
   padding: 8px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 6px;
   backdrop-filter: blur(12px);
 }
@@ -264,3 +264,9 @@ body.wall-mode{overflow:hidden}.wall-mode .app-shell{max-width:none;width:100%;h
 .weather-forecast{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:-4px 0 14px}.forecast-day{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:9px 7px;text-align:center;display:grid;gap:2px;align-items:center}.forecast-day strong{font-size:.78rem;color:var(--navy)}.forecast-day span{font-size:.74rem;font-weight:800;color:var(--text)}.forecast-day .forecast-icon{font-size:1.15rem;line-height:1.1}.forecast-day small{font-size:.66rem;color:var(--muted);font-weight:800}
 @media(max-width:640px){.weather-forecast{gap:4px}.forecast-day{padding:7px 3px;border-radius:10px}.forecast-day strong,.forecast-day span{font-size:.66rem}.forecast-day small{font-size:.58rem}}
 .wall-mode .weather-forecast{margin:-5px 0 9px;gap:6px;flex:0 0 auto}.wall-mode .forecast-day{padding:6px 4px;border-radius:10px}.wall-mode .forecast-day strong{font-size:.67rem}.wall-mode .forecast-day span{font-size:.64rem}.wall-mode .forecast-day .forecast-icon{font-size:.95rem}.wall-mode .forecast-day small{font-size:.56rem}
+
+
+/* v0.8.6 chore board */
+.house-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}.house-systems-heading{margin-top:30px}.chore-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}.chore-summary-card{min-height:110px}.chore-summary-card h3{margin:.2rem 0}.chore-board{display:grid;gap:22px}.chore-section{display:grid;gap:12px}.chore-section-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.chore-section-title h3{margin:0}.chore-list{display:grid;gap:10px}.chore-row{display:grid;grid-template-columns:minmax(0,1fr) 170px 150px;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.chore-row.is-complete{background:rgba(102,130,105,.08);border-color:rgba(102,130,105,.35)}.chore-main{min-width:0}.chore-name{font-weight:800;color:var(--navy)}.chore-meta{margin-top:4px;color:var(--muted);font-size:.86rem}.chore-person-select{width:100%;padding:11px 10px;border:1px solid var(--line);border-radius:12px;background:white;color:var(--navy);font-weight:700}.chore-complete-btn{width:100%;min-height:44px}.chore-complete-btn.done{background:var(--sage);color:white}.chore-complete-btn:disabled{cursor:default;opacity:1}.chore-extra-btn{margin-top:6px;width:100%;border:0;background:transparent;color:var(--navy);text-decoration:underline;cursor:pointer;font-weight:700}.chore-person-last{display:block;margin-top:4px;font-size:.8rem;color:var(--muted)}.chore-empty{padding:16px;border:1px dashed var(--line);border-radius:16px;color:var(--muted)}
+@media(max-width:900px){.chore-summary{grid-template-columns:1fr 1fr 1fr}.chore-row{grid-template-columns:minmax(0,1fr) 150px 140px}}
+@media(max-width:640px){.house-heading{align-items:flex-start;flex-direction:column}.chore-summary{grid-template-columns:1fr}.chore-row{grid-template-columns:1fr}.chore-person-select,.chore-complete-btn{width:100%}}
