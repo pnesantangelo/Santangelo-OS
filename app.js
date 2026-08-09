@@ -1,5 +1,8 @@
+const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7wRNAkML6jsZugZ2IFrwil6v4naXYmFgQKEGS8EUmONSaPNwybAk/exec';
+const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
+
 const demoData={
-  apiVersion:'0.8.5',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.5.1',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
   departureKey:'demo-departure',
@@ -90,7 +93,7 @@ async function openRecipe(recipeKey,displayName,row){
  const modal=byId('recipeModal');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
  byId('recipeTitle').textContent=displayName||recipeKey;byId('recipeContent').innerHTML='<p class="subtle">Loading recipe…</p>';
  try{
-  const base=localStorage.getItem('santangeloApiUrl');if(!base)throw new Error('Connect the Apps Script URL first.');
+  const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base)throw new Error('Connect the Apps Script URL first.');
   const u=new URL(base);u.searchParams.set('action','recipe');u.searchParams.set('recipeKey',recipeKey);
   const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Recipe could not be loaded.');
   renderRecipe(j.recipe||{},displayName||recipeKey,(data.weeklyMealPlan?.days||[]).find(d=>Number(d.row)===Number(row)));
@@ -150,7 +153,7 @@ async function handleMealAction(e){
  }catch(err){alert('Could not update the meal plan: '+err.message);btn.disabled=false;}
 }
 async function apiAction(action,payload={}){
- const base=localStorage.getItem('santangeloApiUrl');if(!base)throw new Error('Connect the Apps Script URL first.');
+ const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base)throw new Error('Connect the Apps Script URL first.');
  const r=await fetch(base,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
  if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Update failed');return j;
 }
@@ -193,12 +196,18 @@ function renderShopping(){
 }
 function updateClock(){const el=byId('currentTime');if(el)el.textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
 function weatherCodeLabel(code){if(code===0)return'Sunny';if(code<=3)return'Partly cloudy';if(code<=48)return'Foggy';if(code<=67)return'Rain';if(code<=77)return'Snow';if(code<=82)return'Showers';if(code<=99)return'Thunderstorms';return'Weather';}
+function weatherCodeIcon(code){if(code===0)return'☀️';if(code<=3)return'⛅';if(code<=48)return'🌫️';if(code<=67)return'🌧️';if(code<=77)return'❄️';if(code<=82)return'🌦️';if(code<=99)return'⛈️';return'🌤️';}
 async function refreshWeather(){
- const label=byId('weatherSummary');if(!label)return;const place=localStorage.getItem('santangeloWeatherLocation')||'';if(!place){label.textContent='Set weather city in More';return;}
- try{const g=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en&format=json`);const gj=await g.json();const loc=gj.results?.[0];if(!loc)throw new Error('City not found');const w=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`);const j=await w.json();label.textContent=`${Math.round(j.current?.temperature_2m)}° · ${weatherCodeLabel(j.current?.weather_code)} · ${loc.name}`;}catch(e){label.textContent='Weather unavailable';}
+ const label=byId('weatherSummary'),forecast=byId('weatherForecast');if(!label)return;const place=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;
+ try{
+  const g=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en&format=json`);const gj=await g.json();const loc=gj.results?.[0];if(!loc)throw new Error('City not found');
+  const w=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&timezone=auto&forecast_days=5`);const j=await w.json();
+  label.textContent=`${Math.round(j.current?.temperature_2m)}° · ${weatherCodeLabel(j.current?.weather_code)} · ${loc.name}`;
+  if(forecast){const d=j.daily||{};forecast.innerHTML=(d.time||[]).slice(0,5).map((date,i)=>{const day=new Date(date+'T12:00:00').toLocaleDateString([], {weekday:'short'}),hi=Math.round(d.temperature_2m_max?.[i]),lo=Math.round(d.temperature_2m_min?.[i]),rain=Math.round(d.precipitation_probability_max?.[i]||0),rainText=rain>10?`💧 ${rain}%`:'☀ Dry';return `<div class="forecast-day"><strong>${day}</strong><span class="forecast-icon">${weatherCodeIcon(d.weather_code?.[i])}</span><span>${hi}° / ${lo}°</span><small>${rainText}</small></div>`;}).join('');}
+ }catch(e){label.textContent='Weather unavailable';if(forecast)forecast.innerHTML='';}
 }
 async function addShoppingItem(){const item=byId('shoppingItem').value.trim();if(!item)return;const status=byId('shoppingAddStatus');try{status.textContent='Adding…';await apiAction('addShoppingItem',{item,quantity:byId('shoppingQty').value.trim()||'1',store:byId('shoppingStore').value.trim(),category:byId('shoppingCategory').value.trim(),source:'Web App'});byId('shoppingItem').value='';byId('shoppingQty').value='';status.textContent='Added.';await refreshFromApi();}catch(e){status.textContent='Could not add: '+e.message;}}
-function applyDisplayMode(){const wall=new URLSearchParams(location.search).get('mode')==='wall';document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
+function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=500;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
 
 function render(){
  const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});updateClock();
@@ -213,7 +222,7 @@ function render(){
  renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
-async function refreshFromApi(){const base=localStorage.getItem('santangeloApiUrl');if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
+async function refreshFromApi(){const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector(`[data-screen="${b.dataset.target}"]`).classList.add('active');});
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||'';byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||'';byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,30*60*1000);
+byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL;byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);

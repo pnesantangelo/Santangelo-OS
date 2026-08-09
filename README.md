@@ -1,4 +1,4 @@
-# Santangelo OS Web v0.8.5
+# Santangelo OS Web v0.8.5.1
 
 ## Home / wall display
 - Removes shopping summaries from Home.
@@ -20,3 +20,11 @@
 3. Deploy a new version of the existing Apps Script web app; keep the same `/exec` URL.
 4. Hard refresh the web app.
 5. For Yodeck use the wall URL above.
+
+
+## v0.8.5.1 patch
+- Built-in default Apps Script /exec connection for zero-setup displays.
+- Default weather location: Yorba Linda, CA.
+- Automatic portrait wall mode; use ?mode=app to force the normal interface.
+- Five-day forecast with highs, lows, and rain chance/dry indicator.
+- Weather refreshes hourly.

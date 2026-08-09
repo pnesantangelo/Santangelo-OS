@@ -20,11 +20,13 @@
       </div>
       <div class="topbar-right">
         <div class="weather-clock" aria-label="Time and weather">
-          <div><strong id="currentTime">--:--</strong><span id="weatherSummary">Weather not configured</span></div>
+          <div><strong id="currentTime">--:--</strong><span id="weatherSummary">Loading weather…</span></div>
         </div>
         <div class="status-pill" id="systemStatus">Demo data</div>
       </div>
     </header>
+
+    <section id="weatherForecast" class="weather-forecast" aria-label="Five day weather forecast"></section>
 
     <main id="app">
       <section class="screen active" data-screen="home">
@@ -199,6 +201,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=0.8.5"></script>
+  <script src="app.js?v=0.8.5.1"></script>
 </body>
 </html>
