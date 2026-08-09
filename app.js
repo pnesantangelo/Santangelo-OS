@@ -1,13 +1,13 @@
 const demoData={
-  apiVersion:'0.8.2',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
+  apiVersion:'0.8.5',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
   familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
   nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
   departureKey:'demo-departure',
   dinner:{plan:'Use leftovers or a simple family meal',note:'Keep cleanup easy tonight.'},
   readiness:[{id:'demo-1',name:'Carson',detail:'Cleats and flags/belt',required:'Yes',ready:false},{id:'demo-2',name:'Nathan',detail:'Mouthguard and uniform',required:'Yes',ready:false},{id:'demo-3',name:'Erin',detail:'Phone, keys, and wallet',required:'Yes',ready:false}],
   people:[],schedule:[],decisions:['Buy now: paper towels, spray stain remover, mustard, salami.'],
-  shopping:{buyNow:[{item:'Paper towels'}],buySoon:[{item:'Chicken breast'}],dontBuy:[{item:'Ground beef'}],byStore:{}},
-  householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
+  shopping:{active:[{id:'demo-1',item:'Sour cream',quantity:'1',store:'Smart & Final',category:'Dairy',reason:'Meal ingredient',source:'Grocery List',trackInventory:'Auto',inventoryMatch:''},{id:'demo-2',item:'Chicken breast',quantity:'4 lb',store:"Sam's Club",category:'Inventory',reason:'Low inventory',source:'Inventory',trackInventory:'Auto',inventoryMatch:'Chicken breast'}],buyNow:[{item:'Paper towels'}],buySoon:[{item:'Chicken breast'}],dontBuy:[{item:'Ground beef'}],byStore:{}},
+  homeHealth:{percent:62,completed:5,total:8,label:'5 of 8 chores complete'},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
   weeklyMealPlan:{weekOf:'Aug 10',status:'Draft',days:[
     {row:4,date:'8/10/2026',day:'Monday',meal:'Pool & Pizza Party',readiness:'Ready',missingCount:0,missingItems:'',approval:'Approved',why:'Calendar override'},
     {row:5,date:'8/11/2026',day:'Tuesday',meal:'Honey Garlic Grilled Chicken',readiness:'Ready',missingCount:0,missingItems:'',approval:'Draft',why:'Cook once, use twice'},
@@ -73,7 +73,7 @@ function renderMealPlan(){
  renderTomorrowPrep(days);
  byId('mealPlanEditor').innerHTML=days.length?days.map((d,i)=>`<article class="card meal-editor-card ${readinessClass(d)}" data-row="${d.row}">
    <div class="meal-editor-top"><div><p class="card-label">${esc(d.day)} · ${esc(d.date)}</p>${String(d.approval).toLowerCase()==='approved'&&d.meal?`<button class="recipe-title-link" data-recipe="${esc(d.recipeKey||d.meal)}" data-recipe-display="${esc(d.meal)}" data-recipe-row="${d.row}">${esc(d.meal)}</button>`:`<h3>${esc(d.meal||'No meal selected')}</h3>`}</div><span class="meal-status">${readinessLabel(d)}</span></div>
-   <p class="subtle">${esc(d.why||'')}</p>${(d.reviewItems||[]).length&&String(d.approval).toLowerCase()!=='approved'?`<div class="ingredient-review"><p class="missing-line"><strong>Review every ingredient the OS could not confirm:</strong></p>${(d.reviewItems||[]).map((item,j)=>`<div class="ingredient-review-row" data-review-row="${d.row}" data-review-item="${esc(item)}"><span class="ingredient-name">${esc(item)}</span><label><input type="radio" name="ingredient-${d.row}-${j}" value="have"> I have it</label><label><input type="radio" name="ingredient-${d.row}-${j}" value="need"> Need to buy</label><input class="ingredient-alias-input" data-have-as placeholder="Stored as… (optional)"></div>`).join('')}<p class="subtle small">Every item must be marked. Only items marked <strong>Need to buy</strong> remain on the shopping list. Items marked <strong>I have it</strong> go to Inventory Review Queue.</p></div>`:(String(d.approval).toLowerCase()==='approved'&&d.missingItems?`<div class="ingredient-review reviewed-needs"><p><strong>Reviewed and still needed:</strong> ${esc(d.missingItems)}</p><button class="secondary-btn" data-action="add-needed" data-row="${d.row}">Add these to grocery list</button></div>`:'')}
+   <p class="subtle">${esc(d.why||'')}</p>${(d.reviewItems||[]).length&&String(d.approval).toLowerCase()!=='approved'?`<div class="ingredient-review"><p class="missing-line"><strong>Review ingredients the OS still cannot match:</strong></p>${(d.reviewItems||[]).map((item,j)=>`<div class="ingredient-review-row" data-review-row="${d.row}" data-review-item="${esc(item)}"><span class="ingredient-name">${esc(item)}</span><label><input type="radio" name="ingredient-${d.row}-${j}" value="have"> I have it</label><label><input type="radio" name="ingredient-${d.row}-${j}" value="need"> Need to buy</label><input class="ingredient-alias-input" data-have-as placeholder="Stored as… (optional)"></div>`).join('')}<p class="subtle small">Only unmatched ingredients appear here. Refreshing the app rechecks Kitchen Inventory and aliases. Mark the remaining items as <strong>I have it</strong> or <strong>Need to buy</strong>.</p></div>`:(String(d.approval).toLowerCase()==='approved'&&d.missingItems?`<div class="ingredient-review reviewed-needs"><p><strong>Reviewed and still needed:</strong> ${esc(d.missingItems)}</p><button class="secondary-btn" data-action="add-needed" data-row="${d.row}">Add these to grocery list</button></div>`:'')}
    <div class="meal-actions">
     <button class="primary-btn" data-action="approve" data-row="${d.row}" ${String(d.approval).toLowerCase()==='approved'?'disabled':''}>${String(d.approval).toLowerCase()==='approved'?'Approved ✓':'Approve'}</button>
     <button class="secondary-btn" data-action="alternate" data-row="${d.row}">Another idea</button>
@@ -136,7 +136,7 @@ async function handleMealAction(e){
     return {ingredient:el.dataset.reviewItem,status:chosen?.value||'',inventoryName:el.querySelector('[data-have-as]')?.value.trim()||''};
    });
    const unreviewed=reviewedItems.filter(x=>!x.status);
-   if(unreviewed.length){alert(`Please mark every ingredient as I have it or Need to buy. Remaining: ${unreviewed.map(x=>x.ingredient).join(', ')}`);btn.disabled=false;return;}
+   if(unreviewed.length){alert(`Please review each unmatched ingredient as I have it or Need to buy. Remaining: ${unreviewed.map(x=>x.ingredient).join(', ')}`);btn.disabled=false;return;}
    await apiAction('approveMeal',{row,reviewedItems});
   }
   if(action==='add-needed'){const row=Number(btn.dataset.row),day=days.find(d=>Number(d.row)===row),items=splitRecipeList(day?.missingItems);if(!items.length){alert('There are no reviewed grocery items for this meal.');btn.disabled=false;return;}await apiAction('addMissingToGrocery',{meal:day?.recipeKey||day?.meal||'',items});alert('Reviewed items added to the grocery list.');}
@@ -162,22 +162,58 @@ function updateDepartureCountdown(){
  const total=Math.ceil(diff/60000),h=Math.floor(total/60),m=total%60;
  el.textContent=h?`Leave in ${h} hr${h===1?'':'s'}${m?' '+m+' min':''}`:`Leave in ${m} min`;
 }
+
+function setGauge(id,value){
+ const el=byId(id);if(!el)return;const v=Math.max(0,Math.min(100,Number(value)||0));el.style.setProperty('--progress',`${v}%`);
+}
+function readySnapshot(){
+ const items=data.readiness||[],required=items.filter(x=>x.required!=='Optional');
+ if(!required.length)return {percent:100,done:0,total:0};
+ const key='santangeloReady:'+String(data.departureKey||'current');const saved=JSON.parse(localStorage.getItem(key)||'{}');
+ const done=required.filter(x=>{const k=x.id||`${x.name}|${x.detail}`;return saved[k]??x.ready;}).length;
+ return {percent:Math.round(done/required.length*100),done,total:required.length};
+}
+function loadScore(label){const s=String(label||'').toLowerCase();if(/open|very light/.test(s))return 20;if(/light/.test(s))return 35;if(/heavy|late/.test(s))return 88;if(/busy|full/.test(s))return 72;return 50;}
+function renderHomeMetrics(){
+ const hh=data.homeHealth||{percent:0,completed:0,total:0,label:'No chores assigned'};const rp=readySnapshot();const dl=data.dayLoadMetric||{percent:loadScore(data.dayLoad),label:data.dayLoad||'Normal'};
+ setGauge('homeHealthGauge',hh.percent);byId('homeHealthValue').textContent=hh.total?`${hh.percent}%`:'—';byId('homeHealthLabel').textContent=hh.total?(hh.percent>=80?'Home is in good shape':hh.percent>=50?'Making progress':'Needs a reset'):'No chores assigned';byId('homeHealthDetail').textContent=hh.label||`${hh.completed||0} of ${hh.total||0} complete`;
+ setGauge('familyReadyGauge',rp.percent);byId('familyReadyValue').textContent=rp.total?`${rp.percent}%`:'✓';byId('familyReadyLabel').textContent=rp.total?(rp.percent===100?'Ready to go':`${rp.done} of ${rp.total} ready`):'Nothing to pack';byId('familyReadyDetail').textContent=data.nextDeparture?.title||'';
+ setGauge('dayLoadGauge',dl.percent);byId('dayLoadValue').textContent=`${dl.percent}%`;byId('dayLoadLabel').textContent=dl.label||data.dayLoad||'Normal';byId('dayLoadDetail').textContent=dl.detail||'Calendar, travel, and commitments';
+}
+function shoppingItemHtml(x){
+ const qty=esc(x.quantity||'');const store=esc(x.store||'Unassigned');const track=String(x.trackInventory||'Auto');const match=esc(x.inventoryMatch||'');
+ return `<article class="card shopping-row" data-shopping-id="${esc(x.id||'')}"><div class="shopping-row-main"><div><p class="card-label">${esc(x.source||'SHOPPING')}</p><h3>${esc(x.item)}</h3><p class="subtle small">${qty?`Need: ${qty} · `:''}${store}${x.reason?` · ${esc(x.reason)}`:''}</p>${match?`<p class="inventory-match">Tracks: ${match}</p>`:''}</div><div class="shopping-purchase-controls"><label>Qty bought<input data-shop-qty type="text" value="${qty||'1'}"></label><label>Inventory<select data-shop-track><option value="Auto" ${track==='Auto'?'selected':''}>Auto</option><option value="No" ${track==='No'?'selected':''}>Do not track</option><option value="Kitchen" ${track==='Kitchen'?'selected':''}>Kitchen</option><option value="Household" ${track==='Household'?'selected':''}>Household</option></select></label><button class="primary-btn" data-shop-bought type="button">Bought ✓</button></div></div></article>`;
+}
+function renderShopping(){
+ const items=data.shopping?.active||[];const root=byId('shoppingActiveList');if(!root)return;
+ if(!items.length){root.innerHTML='<article class="card"><h3>Shopping list is clear ✓</h3><p class="subtle">Add an item above or wait for the OS to find something you need.</p></article>';return;}
+ const stores={};items.forEach(x=>{const k=x.store||'Unassigned';(stores[k]||(stores[k]=[])).push(x);});
+ root.innerHTML=Object.keys(stores).sort().map(store=>`<section class="shopping-store-group"><div class="shopping-store-title"><h3>${esc(store)}</h3><span>${stores[store].length} item${stores[store].length===1?'':'s'}</span></div>${stores[store].map(shoppingItemHtml).join('')}</section>`).join('');
+ document.querySelectorAll('[data-shop-bought]').forEach(btn=>btn.addEventListener('click',async()=>{const card=btn.closest('[data-shopping-id]'),item=items.find(x=>String(x.id)===String(card.dataset.shoppingId));if(!item)return;const qtyBought=card.querySelector('[data-shop-qty]').value.trim()||'1',trackInventory=card.querySelector('[data-shop-track]').value;try{btn.disabled=true;btn.textContent='Saving…';await apiAction('markShoppingPurchased',{id:item.id,row:item.row||0,item:item.item,source:item.source||'',quantityBought:qtyBought,trackInventory,inventoryMatch:item.inventoryMatch||'',store:item.store||'',category:item.category||'',unit:item.unit||''});await refreshFromApi();}catch(err){alert('Could not mark purchased: '+err.message);btn.disabled=false;btn.textContent='Bought ✓';}}));
+}
+function updateClock(){const el=byId('currentTime');if(el)el.textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
+function weatherCodeLabel(code){if(code===0)return'Sunny';if(code<=3)return'Partly cloudy';if(code<=48)return'Foggy';if(code<=67)return'Rain';if(code<=77)return'Snow';if(code<=82)return'Showers';if(code<=99)return'Thunderstorms';return'Weather';}
+async function refreshWeather(){
+ const label=byId('weatherSummary');if(!label)return;const place=localStorage.getItem('santangeloWeatherLocation')||'';if(!place){label.textContent='Set weather city in More';return;}
+ try{const g=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en&format=json`);const gj=await g.json();const loc=gj.results?.[0];if(!loc)throw new Error('City not found');const w=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`);const j=await w.json();label.textContent=`${Math.round(j.current?.temperature_2m)}° · ${weatherCodeLabel(j.current?.weather_code)} · ${loc.name}`;}catch(e){label.textContent='Weather unavailable';}
+}
+async function addShoppingItem(){const item=byId('shoppingItem').value.trim();if(!item)return;const status=byId('shoppingAddStatus');try{status.textContent='Adding…';await apiAction('addShoppingItem',{item,quantity:byId('shoppingQty').value.trim()||'1',store:byId('shoppingStore').value.trim(),category:byId('shoppingCategory').value.trim(),source:'Web App'});byId('shoppingItem').value='';byId('shoppingQty').value='';status.textContent='Added.';await refreshFromApi();}catch(e){status.textContent='Could not add: '+e.message;}}
+function applyDisplayMode(){const wall=new URLSearchParams(location.search).get('mode')==='wall';document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
+
 function render(){
- const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
- byId('stateName').textContent=data.state||'Normal Day';byId('dayLoad').textContent=`${data.dayLoad||'Normal'} day`;
+ const now=new Date();byId('todayDate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});updateClock();
  byId('nextEvent').textContent=data.nextDeparture?.title||'Nothing scheduled';byId('nextTime').textContent=data.nextDeparture?.time||'';byId('countdown').textContent=data.nextDeparture?.leaveText||'';updateDepartureCountdown();
- byId('dinnerPlan').textContent=data.dinner?.plan||'No meal planned';byId('mealNote').textContent=data.dinner?.note||'';byId('familyFocus').textContent=data.familyFocus||'';byId('whatCanWait').textContent=data.whatCanWait||'';
- byId('buyNowList').innerHTML=listHtml(data.shopping?.buyNow,'Nothing urgent');byId('buySoonList').innerHTML=listHtml(data.shopping?.buySoon,'Nothing needed next trip');byId('dontBuyList').innerHTML=listHtml((data.shopping?.dontBuy||[]).slice(0,6),'No stocked items yet');
+ byId('dinnerPlan').textContent=data.dinner?.plan||'No meal planned';byId('mealNote').textContent=data.dinner?.note||'';
  const readyStoreKey='santangeloReady:'+String(data.departureKey||'current');
  const saved=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');
  byId('readyList').innerHTML=(data.readiness||[]).length?(data.readiness||[]).map((x,i)=>{const itemKey=x.id||`${x.name}|${x.detail}`,r=saved[itemKey]??x.ready;return `<div class="ready-item ${r?'ready':''}" data-ready-index="${i}"><div><div class="ready-name">${esc(x.name)}</div><div class="ready-status">${r?'Ready ✓':esc(x.required==='Optional'?'Optional':'Tap when packed')}</div></div><div class="subtle small">${esc(x.detail||'')}</div></div>`}).join(''):'<div class="subtle">Nothing needs to be packed for another departure today.</div>';
  document.querySelectorAll('[data-ready-index]').forEach(el=>el.onclick=()=>{const x=data.readiness[+el.dataset.readyIndex],itemKey=x.id||`${x.name}|${x.detail}`,store=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');store[itemKey]=!(store[itemKey]??x.ready);localStorage.setItem(readyStoreKey,JSON.stringify(store));render();});
  byId('scheduleList').innerHTML=(data.schedule||[]).map(x=>`<div class="timeline-item"><div class="timeline-time">${esc(x.time)}</div><div>${esc(x.title)}</div></div>`).join('');
  byId('decisionList').innerHTML=(data.decisions||[]).map(x=>`<div class="decision-item">${esc(x)}</div>`).join('');
- renderMealPlan();renderFourWeekCalendar();
+ renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
 async function refreshFromApi(){const base=localStorage.getItem('santangeloApiUrl');if(!base){data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();return;}try{byId('systemStatus').textContent='Refreshing…';const u=new URL(base);u.searchParams.set('action','dashboard');const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message);data=j;byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();}catch(e){console.error(e);byId('systemStatus').textContent='Connection issue';data=structuredClone(demoData);render();}}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector(`[data-screen="${b.dataset.target}"]`).classList.add('active');});
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||'';refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);
+byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{localStorage.removeItem('santangeloApiUrl');byId('apiUrl').value='';refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||'';byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||'';byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,30*60*1000);

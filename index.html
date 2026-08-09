@@ -18,86 +18,68 @@
         <h1>Santangelo Home</h1>
         <p id="todayDate" class="subtle"></p>
       </div>
-      <div class="status-pill" id="systemStatus">Demo data</div>
+      <div class="topbar-right">
+        <div class="weather-clock" aria-label="Time and weather">
+          <div><strong id="currentTime">--:--</strong><span id="weatherSummary">Weather not configured</span></div>
+        </div>
+        <div class="status-pill" id="systemStatus">Demo data</div>
+      </div>
     </header>
 
     <main id="app">
       <section class="screen active" data-screen="home">
-        <div class="hero-grid">
-          <article class="card state-card">
-            <p class="card-label">TODAY</p>
-            <h2 id="stateName">Late Sports Night</h2>
-            <p id="dayLoad" class="large-subtext">Heavy day</p>
+        <section class="health-strip" aria-label="Family dashboard health">
+          <article class="card gauge-card" id="homeHealthCard">
+            <div class="gauge" id="homeHealthGauge"><span id="homeHealthValue">--</span></div>
+            <div><p class="card-label">HOME HEALTH</p><h3 id="homeHealthLabel">Chores loading</h3><p id="homeHealthDetail" class="subtle small"></p></div>
           </article>
-
-          <article class="card next-card">
-            <p class="card-label">NEXT</p>
-            <h2 id="nextEvent">Gators Practice</h2>
-            <p id="nextTime" class="large-subtext">6:00 PM</p>
-            <p id="countdown" class="countdown">Leave in 1 hr 12 min</p>
+          <article class="card gauge-card" id="familyReadyCard">
+            <div class="gauge" id="familyReadyGauge"><span id="familyReadyValue">--</span></div>
+            <div><p class="card-label">FAMILY READY</p><h3 id="familyReadyLabel">Next departure</h3><p id="familyReadyDetail" class="subtle small"></p></div>
           </article>
-        </div>
-
-        <div class="home-grid">
-          <article class="card">
-            <p class="card-label">DINNER</p>
-            <h3 id="dinnerPlan">Use leftovers or a simple family meal</h3>
-            <p id="mealNote" class="subtle">Keep cleanup easy tonight.</p>
-          </article>
-
-          <article class="card">
-            <p class="card-label">FAMILY FOCUS</p>
-            <h3 id="familyFocus">Protect tomorrow morning.</h3>
-            <p id="whatCanWait" class="subtle">Deep cleaning can wait.</p>
-          </article>
-        </div>
-
-        <article class="card calendar-card">
-          <div class="section-title-row calendar-title-row">
-            <div>
-              <p class="card-label">FAMILY CALENDAR</p>
-              <h3>Next four weeks</h3>
-            </div>
-            <p id="calendarRange" class="subtle small"></p>
-          </div>
-          <div class="calendar-legend" aria-label="Family calendar colors">
-            <span><i class="legend-dot person-phillip"></i>Phillip</span>
-            <span><i class="legend-dot person-erin"></i>Erin</span>
-            <span><i class="legend-dot person-carson"></i>Carson</span>
-            <span><i class="legend-dot person-nathan"></i>Nathan</span>
-            <span><i class="legend-dot person-addison"></i>Addison</span>
-            <span><i class="legend-dot person-both-boys"></i>Both boys</span>
-            <span><i class="legend-dot person-family"></i>Whole family</span>
-          </div>
-          <div class="calendar-scroll">
-            <div id="fourWeekCalendar" class="four-week-calendar"></div>
-          </div>
-        </article>
-
-        <section class="shopping-summary">
-          <article class="card shopping-card action-card">
-            <p class="card-label">BUY NOW</p>
-            <div id="buyNowList" class="compact-list"></div>
-          </article>
-          <article class="card shopping-card watch-card">
-            <p class="card-label">NEXT TRIP</p>
-            <div id="buySoonList" class="compact-list"></div>
-          </article>
-          <article class="card shopping-card good-card">
-            <p class="card-label">SKIP</p>
-            <div id="dontBuyList" class="compact-list"></div>
+          <article class="card gauge-card" id="dayLoadCard">
+            <div class="gauge" id="dayLoadGauge"><span id="dayLoadValue">--</span></div>
+            <div><p class="card-label">DAY LOAD</p><h3 id="dayLoadLabel">Normal</h3><p id="dayLoadDetail" class="subtle small">How full the day feels</p></div>
           </article>
         </section>
 
-        <article class="card ready-card">
+        <div class="hero-grid home-primary-grid">
+          <article class="card next-card">
+            <p class="card-label">NEXT</p>
+            <h2 id="nextEvent">Nothing scheduled</h2>
+            <p id="nextTime" class="large-subtext"></p>
+            <p id="countdown" class="countdown"></p>
+          </article>
+          <article class="card dinner-card">
+            <p class="card-label">DINNER</p>
+            <h2 id="dinnerPlan">No meal planned</h2>
+            <p id="mealNote" class="subtle">Keep cleanup easy tonight.</p>
+          </article>
+        </div>
+
+        <article class="card ready-card home-ready-card">
           <div class="section-title-row">
             <div>
-              <p class="card-label">READY?</p>
-              <h3>Before you leave</h3>
+              <p class="card-label">BEFORE YOU LEAVE</p>
+              <h3 id="readyHeading">Departure checklist</h3>
             </div>
             <button class="secondary-btn" id="resetReady">Reset</button>
           </div>
           <div id="readyList" class="ready-list"></div>
+        </article>
+
+        <article class="card calendar-card wall-calendar-card">
+          <div class="section-title-row calendar-title-row">
+            <div><p class="card-label">FAMILY CALENDAR</p><h3>Next four weeks</h3></div>
+            <p id="calendarRange" class="subtle small"></p>
+          </div>
+          <div class="calendar-legend" aria-label="Family calendar colors">
+            <span><i class="legend-dot person-phillip"></i>Phillip</span><span><i class="legend-dot person-erin"></i>Erin</span>
+            <span><i class="legend-dot person-carson"></i>Carson</span><span><i class="legend-dot person-nathan"></i>Nathan</span>
+            <span><i class="legend-dot person-addison"></i>Addison</span><span><i class="legend-dot person-both-boys"></i>Both boys</span>
+            <span><i class="legend-dot person-family"></i>Whole family</span>
+          </div>
+          <div class="calendar-scroll"><div id="fourWeekCalendar" class="four-week-calendar"></div></div>
         </article>
       </section>
 
@@ -131,6 +113,25 @@
         <div id="mealPlanEditor" class="meal-plan-editor"></div>
       </section>
 
+      <section class="screen" data-screen="shopping">
+        <div class="section-heading shopping-heading">
+          <p class="eyebrow">SHOPPING</p><h2>Active shopping list</h2>
+          <p class="subtle">Grocery List + meal needs + inventory needs in one place. Purchased items disappear from this view.</p>
+        </div>
+        <article class="card quick-add-card">
+          <p class="card-label">QUICK ADD</p>
+          <div class="quick-add-grid">
+            <label>Item<input id="shoppingItem" type="text" placeholder="Add milk, notebooks, sunscreen…"></label>
+            <label>Quantity<input id="shoppingQty" type="text" placeholder="1"></label>
+            <label>Store<input id="shoppingStore" type="text" placeholder="Optional"></label>
+            <label>Category<input id="shoppingCategory" type="text" placeholder="Optional"></label>
+            <button id="addShoppingItem" class="primary-btn" type="button">Add item</button>
+          </div>
+          <p id="shoppingAddStatus" class="subtle small" aria-live="polite"></p>
+        </article>
+        <div id="shoppingActiveList" class="shopping-active-list"></div>
+      </section>
+
       <section class="screen" data-screen="today">
         <div class="section-heading">
           <p class="eyebrow">TODAY</p>
@@ -162,6 +163,8 @@
         <article class="card">
           <label for="apiUrl">Apps Script Web App URL</label>
           <input id="apiUrl" type="url" placeholder="Paste your deployed Apps Script URL" />
+          <label for="weatherLocation">Weather city</label>
+          <input id="weatherLocation" type="text" placeholder="City, State" />
           <div class="button-row">
             <button id="saveApi" class="primary-btn">Save & refresh</button>
             <button id="useDemo" class="secondary-btn">Use demo data</button>
@@ -189,12 +192,13 @@
     <nav class="bottom-nav">
       <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
       <button class="nav-btn" data-target="meals"><span>🍽</span>Meals</button>
+      <button class="nav-btn" data-target="shopping"><span>🛒</span>Shop</button>
       <button class="nav-btn" data-target="today"><span>▣</span>Today</button>
       <button class="nav-btn" data-target="house"><span>⌂</span>House</button>
       <button class="nav-btn" data-target="more"><span>•••</span>More</button>
     </nav>
   </div>
 
-  <script src="app.js?v=0.8.0"></script>
+  <script src="app.js?v=0.8.5"></script>
 </body>
 </html>
