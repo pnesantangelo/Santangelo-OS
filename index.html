@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=0.8.6" />
+  <link rel="stylesheet" href="styles.css?v=0.8.6.1" />
 </head>
 <body>
   <div class="app-shell">
@@ -59,16 +59,26 @@
           </article>
         </div>
 
-        <article class="card ready-card home-ready-card">
-          <div class="section-title-row">
-            <div>
-              <p class="card-label">BEFORE YOU LEAVE</p>
-              <h3 id="readyHeading">Departure checklist</h3>
+        <div class="departure-wifi-grid">
+          <article class="card ready-card home-ready-card">
+            <div class="section-title-row">
+              <div>
+                <p class="card-label">BEFORE YOU LEAVE</p>
+                <h3 id="readyHeading">Departure checklist</h3>
+              </div>
+              <button class="secondary-btn" id="resetReady">Reset</button>
             </div>
-            <button class="secondary-btn" id="resetReady">Reset</button>
-          </div>
-          <div id="readyList" class="ready-list"></div>
-        </article>
+            <div id="readyList" class="ready-list"></div>
+          </article>
+          <article class="card wifi-qr-card" aria-label="Home Wi-Fi QR code">
+            <p class="card-label">HOME WI-FI</p>
+            <div class="wifi-qr-frame">
+              <img id="wifiQrImage" src="wifi-qr.gif" alt="Scan to join home Wi-Fi" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">
+              <div class="wifi-qr-placeholder" hidden>Wi-Fi QR<br><small>Add wifi-qr.gif</small></div>
+            </div>
+            <p class="subtle small">Scan to connect</p>
+          </article>
+        </div>
 
         <article class="card calendar-card wall-calendar-card">
           <div class="section-title-row calendar-title-row">
@@ -212,6 +222,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=0.8.6"></script>
+  <script src="app.js?v=0.8.6.1"></script>
 </body>
 </html>
