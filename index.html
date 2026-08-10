@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=0.8.6.2" />
+  <link rel="stylesheet" href="styles.css?v=0.8.6.3" />
 </head>
 <body>
   <div class="app-shell">
@@ -25,7 +25,7 @@
         <div class="weather-clock" aria-label="Time and weather">
           <div><strong id="currentTime">--:--</strong><span id="weatherSummary">Loading weather…</span></div>
         </div>
-        <div class="status-pill" id="systemStatus">Demo data</div>
+        <div class="status-pill" id="systemStatus">PAGE LOADED · starting app</div>
       </div>
     </header>
 
@@ -193,9 +193,8 @@
           <input id="weatherLocation" type="text" placeholder="City, State" />
           <div class="button-row">
             <button id="saveApi" class="primary-btn">Save & refresh</button>
-            <button id="useDemo" class="secondary-btn">Use demo data</button>
           </div>
-          <p class="subtle small">The URL stays only on this device.</p>
+          <p class="subtle small">Interactive devices may override this URL. Wall mode always uses the built-in live Santangelo OS endpoint.</p>
         </article>
       </section>
     </main>
@@ -225,6 +224,13 @@
     </nav>
   </div>
 
-  <script src="app.js?v=0.8.6.2"></script>
+  <script>
+    (function(){
+      var status=document.getElementById('systemStatus');
+      window.addEventListener('error',function(e){if(status){status.textContent='JS ERROR · '+(e.message||'script failed to load');status.setAttribute('data-connection','error');}});
+      window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
+    })();
+  </script>
+  <script src="app.js?v=0.8.6.3"></script>
 </body>
 </html>

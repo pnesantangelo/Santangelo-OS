@@ -11,3 +11,11 @@ Changes:
 - Keeps all v0.8.6.1 readability, 12-hour clock, chore, navigation, dinner-recipe, and wall-display changes.
 
 Apps Script backend is unchanged from v0.8.6.1. You do not need to redeploy Apps Script just for this patch if v0.8.6.1 is already deployed.
+
+
+## v0.8.6.3 wall connection fix
+- Removed demo data and the demo-data button completely.
+- Wall mode ignores stale browser/localStorage API settings and always uses the known deployed /exec endpoint.
+- Connection pill now reports CONNECTING, API REACHED, LIVE, OFFLINE, or CONNECTION ERROR.
+- Preserves the user-supplied styles.css font sizes for wall weather and calendar.
+- Wi-Fi QR remains embedded directly in index.html and is displayed in wall mode.

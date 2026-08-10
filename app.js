@@ -1,31 +1,23 @@
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7wRNAkML6jsZugZ2IFrwil6v4naXYmFgQKEGS8EUmONSaPNwybAk/exec';
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
 
-const demoData={
-  apiVersion:'0.8.6.2',generatedAt:new Date().toISOString(),state:'Late Sports Night',dayLoad:'Heavy',
-  familyFocus:'Protect tomorrow morning.',whatCanWait:'Deep cleaning can wait.',
-  nextDeparture:{title:'Gators Practice',time:'6:00 PM',leaveText:'Leave in 1 hr 12 min',departureAt:new Date(Date.now()+72*60000).toISOString()},
-  departureKey:'demo-departure',
-  dinner:{plan:'Use leftovers or a simple family meal',note:'Keep cleanup easy tonight.'},
-  readiness:[{id:'demo-1',name:'Carson',detail:'Cleats and flags/belt',required:'Yes',ready:false},{id:'demo-2',name:'Nathan',detail:'Mouthguard and uniform',required:'Yes',ready:false},{id:'demo-3',name:'Erin',detail:'Phone, keys, and wallet',required:'Yes',ready:false}],
-  people:[],schedule:[],decisions:['Buy now: paper towels, spray stain remover, mustard, salami.'],
-  shopping:{active:[{id:'demo-1',item:'Sour cream',quantity:'1',store:'Smart & Final',category:'Dairy',reason:'Meal ingredient',source:'Grocery List',trackInventory:'Auto',inventoryMatch:''},{id:'demo-2',item:'Chicken breast',quantity:'4 lb',store:"Sam's Club",category:'Inventory',reason:'Low inventory',source:'Inventory',trackInventory:'Auto',inventoryMatch:'Chicken breast'}],buyNow:[{item:'Paper towels'}],buySoon:[{item:'Chicken breast'}],dontBuy:[{item:'Ground beef'}],byStore:{}},
-  homeHealth:{percent:62,completed:5,total:8,label:'5 of 8 chore points complete'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},
-  weeklyMealPlan:{weekOf:'Aug 10',status:'Draft',days:[
-    {row:4,date:'8/10/2026',day:'Monday',meal:'Pool & Pizza Party',readiness:'Ready',missingCount:0,missingItems:'',approval:'Approved',why:'Calendar override'},
-    {row:5,date:'8/11/2026',day:'Tuesday',meal:'Honey Garlic Grilled Chicken',readiness:'Ready',missingCount:0,missingItems:'',approval:'Draft',why:'Cook once, use twice'},
-    {row:6,date:'8/12/2026',day:'Wednesday',meal:'Sesame Pasta Salad with Grilled Chicken',readiness:'Quick Shop',missingCount:2,missingItems:'Baby tomatoes; green onions',approval:'Draft',why:'Uses Tuesday leftovers'},
-    {row:7,date:'8/13/2026',day:'Thursday',meal:'Chicken Tacos / Burritos',readiness:'Shopping Required',missingCount:3,missingItems:'Salsa; sour cream; lettuce',approval:'Draft',why:'Quick first-day meal'},
-    {row:8,date:'8/14/2026',day:'Friday',meal:'Hawaiian Ham & Swiss Sliders',readiness:'Quick Shop',missingCount:2,missingItems:'Hawaiian rolls; Swiss cheese',approval:'Draft',why:'Portable sports-night meal'},
-    {row:9,date:'8/15/2026',day:'Saturday',meal:'Grilled Burgers',readiness:'Ready',missingCount:0,missingItems:'',approval:'Draft',why:'Pairs with freezer prep'},
-    {row:10,date:'8/16/2026',day:'Sunday',meal:'Favorite Half Turkey / Half Beef Meatloaf',readiness:'Quick Shop',missingCount:1,missingItems:'Ground turkey',approval:'Draft',why:'Family dinner with leftovers'}
-  ]}
-};
-const blankData={apiVersion:'0.8.6.2',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
+const blankData={apiVersion:'0.8.6.3',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
+function cloneData(value){return JSON.parse(JSON.stringify(value));}
 function readLastLiveData(){try{return JSON.parse(localStorage.getItem('santangeloLastLiveData')||'null');}catch(e){return null;}}
 function saveLastLiveData(value){try{localStorage.setItem('santangeloLastLiveData',JSON.stringify(value));}catch(e){console.warn('Could not cache live dashboard data',e);}}
-let data=readLastLiveData()||structuredClone(blankData);
+let data=readLastLiveData()||cloneData(blankData);
 const byId=id=>document.getElementById(id);
+function isWallMode(){return document.body.classList.contains('wall-mode');}
+function getApiBase(){
+  // The wall display must always use the known live endpoint. Ignore stale Yodeck localStorage.
+  if(isWallMode()) return DEFAULT_API_URL;
+  const saved=(localStorage.getItem('santangeloApiUrl')||'').trim();
+  return saved || DEFAULT_API_URL;
+}
+function setSystemStatus(text,kind=''){
+  const el=byId('systemStatus'); if(!el)return; el.textContent=text;
+  el.dataset.connection=kind;
+}
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function listHtml(items,empty){return items&&items.length?items.map(x=>`<div class="compact-item">${esc(x.item||x)}</div>`).join(''):`<div class="subtle">${empty}</div>`;}
 function readinessClass(day){const n=Number(day.missingCount||0);if(n>=3)return 'meal-red';if(n>=1)return 'meal-yellow';return 'meal-green';}
@@ -96,7 +88,7 @@ async function openRecipe(recipeKey,displayName,row){
  const modal=byId('recipeModal');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
  byId('recipeTitle').textContent=displayName||recipeKey;byId('recipeContent').innerHTML='<p class="subtle">Loading recipe…</p>';
  try{
-  const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base)throw new Error('Connect the Apps Script URL first.');
+  const base=getApiBase();if(!base)throw new Error('Connect the Apps Script URL first.');
   const u=new URL(base);u.searchParams.set('action','recipe');u.searchParams.set('recipeKey',recipeKey);
   const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Recipe could not be loaded.');
   renderRecipe(j.recipe||{},displayName||recipeKey,(data.weeklyMealPlan?.days||[]).find(d=>Number(d.row)===Number(row)));
@@ -156,7 +148,7 @@ async function handleMealAction(e){
  }catch(err){alert('Could not update the meal plan: '+err.message);btn.disabled=false;}
 }
 async function apiAction(action,payload={}){
- const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);if(!base)throw new Error('Connect the Apps Script URL first.');
+ const base=getApiBase();if(!base)throw new Error('Connect the Apps Script URL first.');
  const r=await fetch(base,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
  if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Update failed');return j;
 }
@@ -246,23 +238,32 @@ function render(){
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
 async function refreshFromApi(){
- const base=(localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL);
- if(!base){byId('systemStatus').textContent='API not configured';data=readLastLiveData()||structuredClone(blankData);render();return;}
+ const base=getApiBase();
+ if(!base){setSystemStatus('CONNECTION ERROR · API URL missing','error');data=cloneData(blankData);render();return;}
  try{
-  byId('systemStatus').textContent='Refreshing…';
-  const u=new URL(base);u.searchParams.set('action','dashboard');u.searchParams.set('_ts',Date.now());
-  const r=await fetch(u.toString(),{cache:'no-store',redirect:'follow'});
-  if(!r.ok)throw new Error(`HTTP ${r.status}`);
-  const j=await r.json();if(j.error)throw new Error(j.message);
-  data=j;saveLastLiveData(j);byId('systemStatus').textContent='Live v'+(j.apiVersion||'');render();
+  setSystemStatus('CONNECTING · contacting API','connecting');
+  const sep=base.includes('?')?'&':'?';
+  const url=base+sep+'action=dashboard&_ts='+Date.now();
+  const controller=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=controller?setTimeout(()=>controller.abort(),15000):null;
+  let r;
+  try{r=await fetch(url,{cache:'no-store',credentials:'omit',signal:controller?controller.signal:undefined});}
+  finally{if(timer)clearTimeout(timer);}
+  setSystemStatus('API REACHED · loading data','connecting');
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const text=await r.text();
+  let j; try{j=JSON.parse(text);}catch(parseErr){throw new Error('API returned non-JSON data');}
+  if(j.error)throw new Error(j.message||'API error');
+  if(!j || !j.apiVersion)throw new Error('Dashboard payload was incomplete');
+  data=j;saveLastLiveData(j);setSystemStatus('LIVE v'+j.apiVersion,'live');render();
  }catch(e){
-  console.error(e);
+  console.error('Santangelo OS API connection failed',e);
   const cached=readLastLiveData();
-  if(cached){data=cached;byId('systemStatus').textContent='Offline • last live data';}
-  else{data=structuredClone(blankData);byId('systemStatus').textContent='Connection issue';}
+  if(cached){data=cached;setSystemStatus('OFFLINE · last live data · '+(e.name==='AbortError'?'timeout':e.message),'offline');}
+  else{data=cloneData(blankData);setSystemStatus('CONNECTION ERROR · '+(e.name==='AbortError'?'timeout':e.message),'error');}
   render();
  }
 }
 function goToScreen(target){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===target));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen===target));window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>goToScreen(b.dataset.target));
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('useDemo').onclick=()=>{data=structuredClone(demoData);byId('systemStatus').textContent='Demo data';render();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=localStorage.getItem('santangeloApiUrl')||DEFAULT_API_URL;byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});applyDisplayMode();updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
+applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
