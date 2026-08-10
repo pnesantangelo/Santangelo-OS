@@ -1,13 +1,13 @@
-# Santangelo OS Web v0.8.6.1
+# Santangelo OS Web v0.8.6.2
 
-Portrait wall-display readability patch.
+Reliability patch for the Raspberry Pi / Yodeck wall display.
 
-- Forces 12-hour AM/PM time.
-- Enlarges current weather and 5-day high/low/rain numbers; removes forecast icons.
-- Enlarges four-week calendar event text in wall mode.
-- Moves departure checklist into a wider left column and reserves a right-side Wi-Fi QR card. Add a `wifi-qr.gif` file beside index.html to show the QR code.
-- Home Health opens House and Day Load opens Today on interactive devices.
-- Dinner opens the stored recipe when tonight has a Recipe Key.
-- Bedroom Reset is tracked separately for every family member each day.
+Changes:
+- Wi-Fi QR code is embedded directly in index.html; there is no separate image file to upload or cache.
+- The app no longer falls back to fake demo data when the Apps Script request fails.
+- Last successful live dashboard data is cached locally and remains visible during a temporary connection issue.
+- If no live cache exists, the dashboard shows a connection/loading state rather than demo content.
+- Adds cache-busting version tags for app.js and styles.css and no-cache HTML hints for Yodeck/GitHub Pages.
+- Keeps all v0.8.6.1 readability, 12-hour clock, chore, navigation, dinner-recipe, and wall-display changes.
 
-The Wi-Fi QR image is intentionally not generated from credentials in public GitHub code. Use a guest-network QR image if the repository/site is public.
+Apps Script backend is unchanged from v0.8.6.1. You do not need to redeploy Apps Script just for this patch if v0.8.6.1 is already deployed.
