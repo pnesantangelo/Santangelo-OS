@@ -1,7 +1,7 @@
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7wRNAkML6jsZugZ2IFrwil6v4naXYmFgQKEGS8EUmONSaPNwybAk/exec';
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
 
-const blankData={apiVersion:'0.8.6.3',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
+const blankData={apiVersion:'0.8.6.4',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
 function cloneData(value){return JSON.parse(JSON.stringify(value));}
 function readLastLiveData(){try{return JSON.parse(localStorage.getItem('santangeloLastLiveData')||'null');}catch(e){return null;}}
 function saveLastLiveData(value){try{localStorage.setItem('santangeloLastLiveData',JSON.stringify(value));}catch(e){console.warn('Could not cache live dashboard data',e);}}
@@ -237,33 +237,58 @@ function render(){
  renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();renderChores();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
-async function refreshFromApi(){
- const base=getApiBase();
- if(!base){setSystemStatus('CONNECTION ERROR · API URL missing','error');data=cloneData(blankData);render();return;}
+let dashboardRefreshInFlight=false;
+let reconnectTimer=null;
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+async function fetchDashboardAttempt(base,timeoutMs){
+ const sep=base.includes('?')?'&':'?';
+ const url=base+sep+'action=dashboard&_ts='+Date.now();
+ const controller=typeof AbortController!=='undefined'?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
  try{
-  setSystemStatus('CONNECTING · contacting API','connecting');
-  const sep=base.includes('?')?'&':'?';
-  const url=base+sep+'action=dashboard&_ts='+Date.now();
-  const controller=typeof AbortController!=='undefined'?new AbortController():null;
-  const timer=controller?setTimeout(()=>controller.abort(),15000):null;
-  let r;
-  try{r=await fetch(url,{cache:'no-store',credentials:'omit',signal:controller?controller.signal:undefined});}
-  finally{if(timer)clearTimeout(timer);}
-  setSystemStatus('API REACHED · loading data','connecting');
+  const r=await fetch(url,{cache:'no-store',credentials:'omit',signal:controller?controller.signal:undefined});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const text=await r.text();
   let j; try{j=JSON.parse(text);}catch(parseErr){throw new Error('API returned non-JSON data');}
   if(j.error)throw new Error(j.message||'API error');
   if(!j || !j.apiVersion)throw new Error('Dashboard payload was incomplete');
-  data=j;saveLastLiveData(j);setSystemStatus('LIVE v'+j.apiVersion,'live');render();
+  return j;
+ } finally { if(timer)clearTimeout(timer); }
+}
+function scheduleReconnect(delayMs=60000){
+ if(reconnectTimer)clearTimeout(reconnectTimer);
+ reconnectTimer=setTimeout(()=>{reconnectTimer=null;refreshFromApi();},delayMs);
+}
+async function refreshFromApi(){
+ if(dashboardRefreshInFlight)return;
+ const base=getApiBase();
+ if(!base){setSystemStatus('CONNECTION ERROR · API URL missing','error');data=readLastLiveData()||cloneData(blankData);render();scheduleReconnect();return;}
+ dashboardRefreshInFlight=true;
+ try{
+  const attempts=[{timeout:60000,wait:0},{timeout:60000,wait:5000},{timeout:60000,wait:15000}];
+  let lastError=null;
+  for(let i=0;i<attempts.length;i++){
+   if(attempts[i].wait)await sleep(attempts[i].wait);
+   setSystemStatus(i===0?'CONNECTING · contacting API':`RETRYING ${i+1}/${attempts.length} · contacting API`,'connecting');
+   try{
+    const j=await fetchDashboardAttempt(base,attempts[i].timeout);
+    setSystemStatus('API REACHED · loading data','connecting');
+    data=j;saveLastLiveData(j);setSystemStatus('LIVE v'+j.apiVersion,'live');render();
+    if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
+    return;
+   }catch(e){lastError=e;console.warn('Santangelo OS dashboard attempt failed',i+1,e);}
+  }
+  throw lastError||new Error('Connection failed');
  }catch(e){
   console.error('Santangelo OS API connection failed',e);
   const cached=readLastLiveData();
-  if(cached){data=cached;setSystemStatus('OFFLINE · last live data · '+(e.name==='AbortError'?'timeout':e.message),'offline');}
-  else{data=cloneData(blankData);setSystemStatus('CONNECTION ERROR · '+(e.name==='AbortError'?'timeout':e.message),'error');}
+  const reason=e&&e.name==='AbortError'?'slow connection / timeout':(e&&e.message?e.message:'connection failed');
+  if(cached){data=cached;setSystemStatus('OFFLINE · last live data · '+reason,'offline');}
+  else{data=cloneData(blankData);setSystemStatus('CONNECTION ERROR · '+reason,'error');}
   render();
- }
+  scheduleReconnect(60000);
+ }finally{dashboardRefreshInFlight=false;}
 }
 function goToScreen(target){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===target));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen===target));window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>goToScreen(b.dataset.target));
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,5*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
+applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,10*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);

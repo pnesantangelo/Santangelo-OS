@@ -19,3 +19,13 @@ Apps Script backend is unchanged from v0.8.6.1. You do not need to redeploy Apps
 - Connection pill now reports CONNECTING, API REACHED, LIVE, OFFLINE, or CONNECTION ERROR.
 - Preserves the user-supplied styles.css font sizes for wall weather and calendar.
 - Wi-Fi QR remains embedded directly in index.html and is displayed in wall mode.
+
+
+## v0.8.6.4 slow-connection reliability patch
+- Dashboard API timeout increased to 60 seconds per attempt.
+- Up to three attempts are made before showing an offline/error state.
+- Failed displays automatically try again after 60 seconds.
+- Last successful live dashboard response remains cached and visible during slow/offline periods.
+- Normal background refresh is every 10 minutes; weather remains hourly.
+- 12-hour AM/PM clock formatting remains explicitly enabled.
+- User-supplied wall weather/calendar font sizes are preserved unchanged.
