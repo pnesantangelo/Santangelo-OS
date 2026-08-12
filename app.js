@@ -1,7 +1,7 @@
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7wRNAkML6jsZugZ2IFrwil6v4naXYmFgQKEGS8EUmONSaPNwybAk/exec';
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
 
-const blankData={apiVersion:'0.8.6.4',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
+const blankData={apiVersion:'0.9.0',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0}},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
 function cloneData(value){return JSON.parse(JSON.stringify(value));}
 function readLastLiveData(){try{return JSON.parse(localStorage.getItem('santangeloLastLiveData')||'null');}catch(e){return null;}}
 function saveLastLiveData(value){try{localStorage.setItem('santangeloLastLiveData',JSON.stringify(value));}catch(e){console.warn('Could not cache live dashboard data',e);}}
@@ -114,7 +114,7 @@ function renderRecipe(recipe,fallbackName,planDay){
   ${(recipe.thawInstructions||recipe.servingDayIngredients||recipe.batchPrepNotes)?`<section class="recipe-section recipe-prep-section"><h3>Make-ahead and serving notes</h3>${recipe.thawInstructions?`<p><strong>Thaw:</strong> ${esc(recipe.thawInstructions)}</p>`:''}${recipe.servingDayIngredients?`<p><strong>Serving day:</strong> ${esc(recipe.servingDayIngredients)}</p>`:''}${recipe.batchPrepNotes?`<p><strong>Batch prep:</strong> ${esc(recipe.batchPrepNotes)}</p>`:''}</section>`:''}
   ${missing.length?`<section class="recipe-section"><h3>${reviewed?'Reviewed and still needed':'Ingredient review needed'}</h3><p>${esc(missing.join(', '))}</p>${reviewed?'<button class="secondary-btn" id="addRecipeMissing">Add reviewed items to grocery list</button>':'<p class="subtle">Review these ingredients from the weekly meal card before adding anything to the grocery list.</p>'}</section>`:''}
   <div class="recipe-actions"><button class="primary-btn" id="markRecipeCooked">Mark cooked</button><label class="rating-label" for="recipeRating">Family rating<select id="recipeRating"><option value="">Choose</option><option value="5">5 — Loved it</option><option value="4">4 — Good</option><option value="3">3 — Okay</option><option value="2">2 — Not a favorite</option><option value="1">1 — Never again</option></select></label><button class="secondary-btn" id="saveRecipeRating">Save rating</button></div>`;
- byId('markRecipeCooked')?.addEventListener('click',async()=>{await recipeAction('markCooked',{meal:recipe.name||fallbackName});closeRecipe();await refreshFromApi();});
+ byId('markRecipeCooked')?.addEventListener('click',async()=>{await recipeAction('markCooked',{meal:recipe.name||fallbackName});closeRecipe();await Promise.all([loadModule('meals',{quiet:true}),loadModule('home',{quiet:true})]);});
  byId('saveRecipeRating')?.addEventListener('click',async()=>{const rating=byId('recipeRating').value;if(!rating)return alert('Choose a rating first.');await recipeAction('rateMeal',{meal:recipe.name||fallbackName,rating:Number(rating)});alert('Rating saved.');});
  byId('addRecipeMissing')?.addEventListener('click',async()=>{await recipeAction('addMissingToGrocery',{meal:recipe.name||fallbackName,items:missing});alert('Missing items added to the grocery list.');});
 }
@@ -144,14 +144,15 @@ async function handleMealAction(e){
    const i=Number(btn.dataset.index),j=action==='up'?i-1:i+1;
    await apiAction('swapMeals',{rowA:days[i].row,rowB:days[j].row});
   }
-  await refreshFromApi();
+  if(action==='add-needed')await loadModule('shopping',{quiet:true});
  }catch(err){alert('Could not update the meal plan: '+err.message);btn.disabled=false;}
 }
 async function apiAction(action,payload={}){
  const base=getApiBase();if(!base)throw new Error('Connect the Apps Script URL first.');
  const r=await fetch(base,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
- if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Update failed');return j;
+ if(!r.ok)throw new Error(`HTTP ${r.status}`);const j=await r.json();if(j.error)throw new Error(j.message||'Update failed');mergePayload(j);return j;
 }
+function mergePayload(j){if(!j)return;Object.keys(j).forEach(k=>{if(!['ok','module'].includes(k))data[k]=j[k];});saveLastLiveData(data);render();}
 function updateDepartureCountdown(){
  const el=byId('countdown'),iso=data.nextDeparture?.departureAt;
  if(!el||!iso)return;
@@ -187,7 +188,7 @@ function renderShopping(){
  if(!items.length){root.innerHTML='<article class="card"><h3>Shopping list is clear ✓</h3><p class="subtle">Add an item above or wait for the OS to find something you need.</p></article>';return;}
  const stores={};items.forEach(x=>{const k=x.store||'Unassigned';(stores[k]||(stores[k]=[])).push(x);});
  root.innerHTML=Object.keys(stores).sort().map(store=>`<section class="shopping-store-group"><div class="shopping-store-title"><h3>${esc(store)}</h3><span>${stores[store].length} item${stores[store].length===1?'':'s'}</span></div>${stores[store].map(shoppingItemHtml).join('')}</section>`).join('');
- document.querySelectorAll('[data-shop-bought]').forEach(btn=>btn.addEventListener('click',async()=>{const card=btn.closest('[data-shopping-id]'),item=items.find(x=>String(x.id)===String(card.dataset.shoppingId));if(!item)return;const qtyBought=card.querySelector('[data-shop-qty]').value.trim()||'1',trackInventory=card.querySelector('[data-shop-track]').value;try{btn.disabled=true;btn.textContent='Saving…';await apiAction('markShoppingPurchased',{id:item.id,row:item.row||0,item:item.item,source:item.source||'',quantityBought:qtyBought,trackInventory,inventoryMatch:item.inventoryMatch||'',store:item.store||'',category:item.category||'',unit:item.unit||''});await refreshFromApi();}catch(err){alert('Could not mark purchased: '+err.message);btn.disabled=false;btn.textContent='Bought ✓';}}));
+ document.querySelectorAll('[data-shop-bought]').forEach(btn=>btn.addEventListener('click',async()=>{const card=btn.closest('[data-shopping-id]'),item=items.find(x=>String(x.id)===String(card.dataset.shoppingId));if(!item)return;const qtyBought=card.querySelector('[data-shop-qty]').value.trim()||'1',trackInventory=card.querySelector('[data-shop-track]').value;try{btn.disabled=true;btn.textContent='Saving…';data.shopping.active=(data.shopping.active||[]).filter(x=>String(x.id)!==String(item.id));renderShopping();await apiAction('markShoppingPurchased',{id:item.id,row:item.row||0,item:item.item,source:item.source||'',quantityBought:qtyBought,trackInventory,inventoryMatch:item.inventoryMatch||'',store:item.store||'',category:item.category||'',unit:item.unit||''});}catch(err){alert('Could not mark purchased: '+err.message);btn.disabled=false;btn.textContent='Bought ✓';}}));
 }
 function choreRowHtml(chore){
  const complete=!!chore.complete, count=Number(chore.count||0), target=Number(chore.target||0), weekly=chore.period==='week';
@@ -204,7 +205,7 @@ function renderChores(){
  byId('choreWeekLabel').textContent=c.weekLabel||'';
  byId('choreSummary').innerHTML=`<article class="card chore-summary-card"><p class="card-label">TODAY</p><h3>${doneDaily} / ${totalDaily}</h3><p class="subtle small">daily chores complete</p></article><article class="card chore-summary-card"><p class="card-label">THIS WEEK</p><h3>${doneWeekly} / ${totalWeekly}</h3><p class="subtle small">weekly minimums complete</p></article><article class="card chore-summary-card"><p class="card-label">HOME HEALTH</p><h3>${data.homeHealth?.total?`${data.homeHealth.percent}%`:'—'}</h3><p class="subtle small">${esc(data.homeHealth?.label||'')}</p></article>`;
  byId('choreBoard').innerHTML=choreSectionHtml('Daily','Resets every day',c.daily||[])+choreSectionHtml('This week','Weekly progress resets Monday',c.weekly||[])+choreSectionHtml('As needed','Available anytime; not counted against Home Health',c.asNeeded||[]);
- document.querySelectorAll('[data-chore-complete],[data-chore-again]').forEach(btn=>btn.addEventListener('click',async()=>{const row=btn.closest('[data-chore-id]'),chore=[...(c.daily||[]),...(c.weekly||[]),...(c.asNeeded||[])].find(x=>String(x.id)===String(row.dataset.choreId));const person=row.querySelector('[data-chore-person]').value;if(!person){alert('Choose who completed the chore first.');return;}try{btn.disabled=true;btn.textContent='Saving…';await apiAction('completeChore',{chore:chore.name,person:person});await refreshFromApi();}catch(e){alert('Could not save chore: '+e.message);btn.disabled=false;btn.textContent='✓ Complete';}}));
+ document.querySelectorAll('[data-chore-complete],[data-chore-again]').forEach(btn=>btn.addEventListener('click',async()=>{const row=btn.closest('[data-chore-id]'),chore=[...(c.daily||[]),...(c.weekly||[]),...(c.asNeeded||[])].find(x=>String(x.id)===String(row.dataset.choreId));const person=row.querySelector('[data-chore-person]').value;if(!person){alert('Choose who completed the chore first.');return;}try{btn.disabled=true;btn.textContent='Saving…';await apiAction('completeChore',{chore:chore.name,person:person});}catch(e){alert('Could not save chore: '+e.message);btn.disabled=false;btn.textContent='✓ Complete';}}));
 }
 
 function updateClock(){const el=byId('currentTime');if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}
@@ -219,7 +220,14 @@ async function refreshWeather(){
   if(forecast){const d=j.daily||{};forecast.innerHTML=(d.time||[]).slice(0,5).map((date,i)=>{const day=new Date(date+'T12:00:00').toLocaleDateString([], {weekday:'short'}),hi=Math.round(d.temperature_2m_max?.[i]),lo=Math.round(d.temperature_2m_min?.[i]),rain=Math.round(d.precipitation_probability_max?.[i]||0),rainText=rain>10?`${rain}% rain`:'Dry';return `<div class="forecast-day"><strong>${day}</strong><div class="forecast-temps"><span class="forecast-high">${hi}°</span><span class="forecast-low">${lo}°</span></div><small>${rainText}</small></div>`;}).join('');}
  }catch(e){label.textContent='Weather unavailable';if(forecast)forecast.innerHTML='';}
 }
-async function addShoppingItem(){const item=byId('shoppingItem').value.trim();if(!item)return;const status=byId('shoppingAddStatus');try{status.textContent='Adding…';await apiAction('addShoppingItem',{item,quantity:byId('shoppingQty').value.trim()||'1',store:byId('shoppingStore').value.trim(),category:byId('shoppingCategory').value.trim(),source:'Web App'});byId('shoppingItem').value='';byId('shoppingQty').value='';status.textContent='Added.';await refreshFromApi();}catch(e){status.textContent='Could not add: '+e.message;}}
+async function addShoppingItem(){
+ const input=byId('shoppingItem'),item=input.value.trim();if(!item)return;const status=byId('shoppingAddStatus');
+ const quantity=byId('shoppingQty').value.trim()||'1',store=byId('shoppingStore').value.trim(),category=byId('shoppingCategory').value.trim();
+ const temp={id:'pending-'+Date.now(),item,quantity,store:store||'Smart & Final',category,source:'Web App',status:'Needed',reason:'Saving…'};
+ data.shopping=data.shopping||{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}};data.shopping.active=[...(data.shopping.active||[]),temp];renderShopping();input.value='';byId('shoppingQty').value='';status.textContent='Added — saving…';
+ try{await apiAction('addShoppingItem',{item,quantity,store,category,source:'Web App'});status.textContent='Added.';}
+ catch(e){data.shopping.active=(data.shopping.active||[]).filter(x=>x.id!==temp.id);renderShopping();input.value=item;status.textContent='Could not add: '+e.message;}
+}
 function applyDisplayMode(){const p=new URLSearchParams(location.search),forced=p.get('mode');const autoPortrait=window.innerHeight>window.innerWidth*1.18&&window.innerWidth>=500;const wall=forced==='wall'||(forced!=='app'&&autoPortrait);document.body.classList.toggle('wall-mode',wall);if(wall){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen==='home'));}}
 
 function render(){
@@ -237,58 +245,38 @@ function render(){
  renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();renderChores();
  const health=(data.householdHealth||[]).map(x=>({name:x.name,status:x.summary,level:x.level,items:[]})),cards=[...(data.house||[]),...health];byId('houseGrid').innerHTML=cards.map(x=>`<article class="card house-status status-${esc(x.level||'good')}"><p class="card-label">${esc(x.name).toUpperCase()}</p><h3>${esc(x.status)}</h3>${x.items?.length?`<ul class="ops-list">${x.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}</article>`).join('');
 }
-let dashboardRefreshInFlight=false;
+let moduleLoads={};
 let reconnectTimer=null;
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-async function fetchDashboardAttempt(base,timeoutMs){
- const sep=base.includes('?')?'&':'?';
- const url=base+sep+'action=dashboard&_ts='+Date.now();
- const controller=typeof AbortController!=='undefined'?new AbortController():null;
- const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
- try{
-  const r=await fetch(url,{cache:'no-store',credentials:'omit',signal:controller?controller.signal:undefined});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const text=await r.text();
-  let j; try{j=JSON.parse(text);}catch(parseErr){throw new Error('API returned non-JSON data');}
-  if(j.error)throw new Error(j.message||'API error');
-  if(!j || !j.apiVersion)throw new Error('Dashboard payload was incomplete');
-  return j;
- } finally { if(timer)clearTimeout(timer); }
+async function fetchModuleAttempt(base,action,timeoutMs){
+ const sep=base.includes('?')?'&':'?';const url=base+sep+'action='+encodeURIComponent(action)+'&_ts='+Date.now();
+ const controller=typeof AbortController!=='undefined'?new AbortController():null;const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
+ try{const r=await fetch(url,{cache:'no-store',credentials:'omit',signal:controller?controller.signal:undefined});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.error)throw new Error(j.message||'API error');return j;}finally{if(timer)clearTimeout(timer);}
 }
-function scheduleReconnect(delayMs=60000){
- if(reconnectTimer)clearTimeout(reconnectTimer);
- reconnectTimer=setTimeout(()=>{reconnectTimer=null;refreshFromApi();},delayMs);
+async function loadModule(action,{quiet=false,timeout=60000}={}){
+ if(moduleLoads[action])return moduleLoads[action];const base=getApiBase();if(!base)throw new Error('API URL missing');
+ moduleLoads[action]=(async()=>{try{if(!quiet)setSystemStatus('LOADING '+action.toUpperCase()+'…','connecting');const j=await fetchModuleAttempt(base,action,timeout);mergePayload(j);if(!quiet)setSystemStatus('LIVE v'+(j.apiVersion||data.apiVersion),'live');return j;}finally{delete moduleLoads[action];}})();
+ return moduleLoads[action];
 }
+function scheduleReconnect(delayMs=60000){if(reconnectTimer)clearTimeout(reconnectTimer);reconnectTimer=setTimeout(()=>{reconnectTimer=null;refreshFromApi();},delayMs);}
 async function refreshFromApi(){
- if(dashboardRefreshInFlight)return;
- const base=getApiBase();
- if(!base){setSystemStatus('CONNECTION ERROR · API URL missing','error');data=readLastLiveData()||cloneData(blankData);render();scheduleReconnect();return;}
- dashboardRefreshInFlight=true;
  try{
-  const attempts=[{timeout:60000,wait:0},{timeout:60000,wait:5000},{timeout:60000,wait:15000}];
-  let lastError=null;
-  for(let i=0;i<attempts.length;i++){
-   if(attempts[i].wait)await sleep(attempts[i].wait);
-   setSystemStatus(i===0?'CONNECTING · contacting API':`RETRYING ${i+1}/${attempts.length} · contacting API`,'connecting');
-   try{
-    const j=await fetchDashboardAttempt(base,attempts[i].timeout);
-    setSystemStatus('API REACHED · loading data','connecting');
-    data=j;saveLastLiveData(j);setSystemStatus('LIVE v'+j.apiVersion,'live');render();
-    if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
-    return;
-   }catch(e){lastError=e;console.warn('Santangelo OS dashboard attempt failed',i+1,e);}
-  }
-  throw lastError||new Error('Connection failed');
- }catch(e){
-  console.error('Santangelo OS API connection failed',e);
-  const cached=readLastLiveData();
-  const reason=e&&e.name==='AbortError'?'slow connection / timeout':(e&&e.message?e.message:'connection failed');
-  if(cached){data=cached;setSystemStatus('OFFLINE · last live data · '+reason,'offline');}
-  else{data=cloneData(blankData);setSystemStatus('CONNECTION ERROR · '+reason,'error');}
-  render();
-  scheduleReconnect(60000);
- }finally{dashboardRefreshInFlight=false;}
+  setSystemStatus('CONNECTING · loading home','connecting');
+  await loadModule('home',{quiet:true,timeout:60000});
+  setSystemStatus('LIVE v'+data.apiVersion,'live');
+  // Calendar is the only second module Home needs. Load it independently so it cannot block the rest of Home.
+  loadModule('calendar',{quiet:true,timeout:60000}).catch(e=>console.warn('Calendar module failed',e));
+  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
+ }catch(e){const cached=readLastLiveData();const reason=e&&e.name==='AbortError'?'slow connection / timeout':(e.message||'connection failed');if(cached){data=cached;setSystemStatus('OFFLINE · last live data · '+reason,'offline');render();}else{data=cloneData(blankData);setSystemStatus('CONNECTION ERROR · '+reason,'error');render();}scheduleReconnect(60000);}
 }
-function goToScreen(target){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===target));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen===target));window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>goToScreen(b.dataset.target));
-byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');await refreshFromApi();}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
-applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(refreshFromApi,10*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
+async function refreshCurrentScreen(target){
+ if(target==='home'){await Promise.allSettled([loadModule('home',{quiet:true}),loadModule('calendar',{quiet:true})]);}
+ else if(target==='meals')await loadModule('meals',{quiet:true});
+ else if(target==='shopping')await loadModule('shopping',{quiet:true});
+ else if(target==='today')await loadModule('home',{quiet:true});
+ else if(target==='house')await Promise.allSettled([loadModule('chores',{quiet:true}),loadModule('house',{quiet:true})]);
+}
+function goToScreen(target){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===target));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen===target));window.scrollTo({top:0,behavior:'smooth'});refreshCurrentScreen(target).catch(e=>{console.warn('Module load failed',target,e);setSystemStatus('PARTIAL · '+target+' unavailable','offline');});}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>goToScreen(b.dataset.target));
+byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
+applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(()=>loadModule('departure',{quiet:true}).catch(()=>{}),2*60*1000);setInterval(()=>loadModule('home',{quiet:true}).catch(()=>{}),5*60*1000);setInterval(()=>loadModule('calendar',{quiet:true}).catch(()=>{}),10*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
