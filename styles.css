@@ -281,3 +281,21 @@ body.wall-mode{overflow:hidden}.wall-mode .app-shell{max-width:none;width:100%;h
 .wall-mode .departure-wifi-grid{grid-template-columns:minmax(0,4.4fr) minmax(115px,1fr);gap:10px;margin:0 0 12px}.wall-mode .wifi-qr-card{display:flex;flex-direction:column;padding:10px}.wall-mode .wifi-qr-card .card-label{margin-bottom:2px;font-size:.63rem}.wall-mode .wifi-qr-frame{width:104px;height:104px;margin:3px auto 4px;border-radius:8px;padding:4px}.wall-mode .wifi-qr-card .small{font-size:.6rem}.wall-mode .home-ready-card{padding-left:20px;padding-right:12px}.wall-mode .ready-list{grid-template-columns:repeat(3,1fr);gap:7px}.wall-mode .ready-item{min-height:60px;padding:8px}.wall-mode .ready-name{font-size:.94rem}.wall-mode .ready-status,.wall-mode .ready-item .small{font-size:.72rem}
 .wall-mode .calendar-weekday{font-size:.72rem;padding:4px}.wall-mode .calendar-date{font-size:.85rem}.wall-mode .calendar-date small{font-size:.58rem}.wall-mode .calendar-event{font-size:1rem;padding:4px 5px;line-height:1.12}.wall-mode .event-time{font-size:.85rem}.wall-mode .no-events{font-size:.62rem}.wall-mode .calendar-legend{font-size:.70rem}
 @media(max-width:640px){.weather-clock>div{align-items:flex-end;flex-direction:column;gap:2px}.current-temp{font-size:1.3rem}.current-condition{font-size:.72rem}.forecast-high{font-size:.82rem!important}.forecast-low{font-size:.72rem!important}}
+
+/* v0.9.1 departure checklist: grouped display on wall, checkboxes in app */
+.ready-person-group{padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.ready-person-name{font-weight:900;color:var(--navy);font-size:1rem;margin-bottom:8px}
+.ready-check-items{display:grid;gap:7px}
+.ready-check-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px 0;cursor:pointer}
+.ready-check-row input[type=checkbox]{width:20px;height:20px;margin:0}
+.ready-check-row span{font-weight:700;color:var(--text)}
+.ready-check-row small{color:var(--muted);font-weight:700}
+.ready-check-row.ready span{text-decoration:line-through;color:var(--muted)}
+.wall-ready-person{padding:0;border:0;border-radius:0;background:transparent}
+.wall-ready-items{margin:0;padding-left:18px;display:grid;gap:3px}
+.wall-ready-items li{color:var(--text);font-weight:700;line-height:1.2}
+.wall-mode .ready-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:9px}
+.wall-mode .ready-person-name{font-size:1.05rem;margin-bottom:5px}
+.wall-mode .wall-ready-items{font-size:.82rem}
+.wall-mode .wall-ready-items li{padding:1px 0}
+@media(max-width:640px){.ready-person-group{padding:11px 12px}.ready-check-row{grid-template-columns:auto minmax(0,1fr)}.ready-check-row small{grid-column:2}}

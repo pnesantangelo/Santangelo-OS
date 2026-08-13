@@ -238,8 +238,17 @@ function render(){
  const homeHealthCard=byId('homeHealthCard'),dayLoadCard=byId('dayLoadCard');if(!document.body.classList.contains('wall-mode')){if(homeHealthCard){homeHealthCard.classList.add('clickable-card');homeHealthCard.onclick=()=>goToScreen('house');}if(dayLoadCard){dayLoadCard.classList.add('clickable-card');dayLoadCard.onclick=()=>goToScreen('today');}}
  const readyStoreKey='santangeloReady:'+String(data.departureKey||'current');
  const saved=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');
- byId('readyList').innerHTML=(data.readiness||[]).length?(data.readiness||[]).map((x,i)=>{const itemKey=x.id||`${x.name}|${x.detail}`,r=saved[itemKey]??x.ready;return `<div class="ready-item ${r?'ready':''}" data-ready-index="${i}"><div><div class="ready-name">${esc(x.name)}</div><div class="ready-status">${r?'Ready ✓':esc(x.required==='Optional'?'Optional':'Tap when packed')}</div></div><div class="subtle small">${esc(x.detail||'')}</div></div>`}).join(''):'<div class="subtle">Nothing needs to be packed for another departure today.</div>';
- document.querySelectorAll('[data-ready-index]').forEach(el=>el.onclick=()=>{const x=data.readiness[+el.dataset.readyIndex],itemKey=x.id||`${x.name}|${x.detail}`,store=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');store[itemKey]=!(store[itemKey]??x.ready);localStorage.setItem(readyStoreKey,JSON.stringify(store));render();});
+ const readinessItems=data.readiness||[];
+ const groupedReadiness=readinessItems.reduce((groups,x,i)=>{const person=String(x.name||'Family').trim()||'Family';(groups[person]||(groups[person]=[])).push({x,i});return groups;},{});
+ const wallMode=document.body.classList.contains('wall-mode');
+ if(!readinessItems.length){
+   byId('readyList').innerHTML='<div class="subtle">Nothing needs to be packed for another departure today.</div>';
+ } else if(wallMode){
+   byId('readyList').innerHTML=Object.entries(groupedReadiness).map(([person,rows])=>`<section class="ready-person-group wall-ready-person"><div class="ready-person-name">${esc(person)}</div><ul class="wall-ready-items">${rows.map(({x})=>`<li>${esc(x.detail||x.required||'Ready')}</li>`).join('')}</ul></section>`).join('');
+ } else {
+   byId('readyList').innerHTML=Object.entries(groupedReadiness).map(([person,rows])=>`<section class="ready-person-group"><div class="ready-person-name">${esc(person)}</div><div class="ready-check-items">${rows.map(({x,i})=>{const itemKey=x.id||`${x.name}|${x.detail}`,r=saved[itemKey]??x.ready;return `<label class="ready-check-row ${r?'ready':''}"><input type="checkbox" data-ready-index="${i}" ${r?'checked':''}><span>${esc(x.detail||x.required||'Ready')}</span>${x.required==='Optional'?'<small>Optional</small>':''}</label>`;}).join('')}</div></section>`).join('');
+   document.querySelectorAll('input[data-ready-index]').forEach(input=>input.addEventListener('change',()=>{const x=data.readiness[+input.dataset.readyIndex],itemKey=x.id||`${x.name}|${x.detail}`,store=JSON.parse(localStorage.getItem(readyStoreKey)||'{}');store[itemKey]=input.checked;localStorage.setItem(readyStoreKey,JSON.stringify(store));render();}));
+ }
  byId('scheduleList').innerHTML=(data.schedule||[]).map(x=>`<div class="timeline-item"><div class="timeline-time">${esc(x.time)}</div><div>${esc(x.title)}</div></div>`).join('');
  byId('decisionList').innerHTML=(data.decisions||[]).map(x=>`<div class="decision-item">${esc(x)}</div>`).join('');
  renderHomeMetrics();renderShopping();renderMealPlan();renderFourWeekCalendar();renderChores();
