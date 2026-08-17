@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#23364d" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Santangelo OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=0.9.1" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WELCOME HOME</p>
+        <h1>Santangelo Home</h1>
+        <p id="todayDate" class="subtle"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="weather-clock" aria-label="Time and weather">
+          <div><strong id="currentTime">--:--</strong><span id="weatherSummary">Loading weather…</span></div>
+        </div>
+        <div class="status-pill" id="systemStatus">PAGE LOADED · starting app</div>
+      </div>
+    </header>
+
+    <section id="weatherForecast" class="weather-forecast" aria-label="Five day weather forecast"></section>
+
+    <main id="app">
+      <section class="screen active" data-screen="home">
+        <section class="health-strip" aria-label="Family dashboard health">
+          <article class="card gauge-card" id="homeHealthCard">
+            <div class="gauge" id="homeHealthGauge"><span id="homeHealthValue">--</span></div>
+            <div><p class="card-label">HOME HEALTH</p><h3 id="homeHealthLabel">Chores loading</h3><p id="homeHealthDetail" class="subtle small"></p></div>
+          </article>
+          <article class="card gauge-card" id="familyReadyCard">
+            <div class="gauge" id="familyReadyGauge"><span id="familyReadyValue">--</span></div>
+            <div><p class="card-label">FAMILY READY</p><h3 id="familyReadyLabel">Next departure</h3><p id="familyReadyDetail" class="subtle small"></p></div>
+          </article>
+          <article class="card gauge-card" id="dayLoadCard">
+            <div class="gauge" id="dayLoadGauge"><span id="dayLoadValue">--</span></div>
+            <div><p class="card-label">DAY LOAD</p><h3 id="dayLoadLabel">Normal</h3><p id="dayLoadDetail" class="subtle small">How full the day feels</p></div>
+          </article>
+        </section>
+
+        <div class="hero-grid home-primary-grid">
+          <article class="card next-card">
+            <p class="card-label">NEXT</p>
+            <h2 id="nextEvent">Nothing scheduled</h2>
+            <p id="nextTime" class="large-subtext"></p>
+            <p id="countdown" class="countdown"></p>
+          </article>
+          <article class="card dinner-card">
+            <p class="card-label">DINNER</p>
+            <h2 id="dinnerPlan">No meal planned</h2>
+            <p id="mealNote" class="subtle">Keep cleanup easy tonight.</p>
+          </article>
+        </div>
+
+        <div class="departure-wifi-grid">
+          <article class="card ready-card home-ready-card">
+            <div class="section-title-row">
+              <div>
+                <p class="card-label">BEFORE YOU LEAVE</p>
+                <h3 id="readyHeading">Departure checklist</h3>
+              </div>
+              <button class="secondary-btn" id="resetReady">Reset</button>
+            </div>
+            <div id="readyList" class="ready-list"></div>
+          </article>
+          <article class="card wifi-qr-card" aria-label="Home Wi-Fi QR code">
+            <p class="card-label">HOME WI-FI</p>
+            <div class="wifi-qr-frame">
+              <img id="wifiQrImage" src="data:image/gif;base64,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" alt="Scan to join home Wi-Fi" >
+              <div class="wifi-qr-placeholder" hidden>Wi-Fi QR<br><small>Wi-Fi QR unavailable</small></div>
+            </div>
+            <p class="subtle small">Scan to connect</p>
+          </article>
+        </div>
+
+        <article class="card calendar-card wall-calendar-card">
+          <div class="section-title-row calendar-title-row">
+            <div><p class="card-label">FAMILY CALENDAR</p><h3>Next four weeks</h3></div>
+            <p id="calendarRange" class="subtle small"></p>
+          </div>
+          <div class="calendar-legend" aria-label="Family calendar colors">
+            <span><i class="legend-dot person-phillip"></i>Phillip</span><span><i class="legend-dot person-erin"></i>Erin</span>
+            <span><i class="legend-dot person-carson"></i>Carson</span><span><i class="legend-dot person-nathan"></i>Nathan</span>
+            <span><i class="legend-dot person-addison"></i>Addison</span><span><i class="legend-dot person-both-boys"></i>Both boys</span>
+            <span><i class="legend-dot person-family"></i>Whole family</span>
+          </div>
+          <div class="calendar-scroll"><div id="fourWeekCalendar" class="four-week-calendar"></div></div>
+        </article>
+      </section>
+
+      <section class="screen" data-screen="meals">
+        <div class="section-heading meals-heading-row">
+          <div>
+            <p class="eyebrow">MEALS</p>
+            <h2 id="mealPlanWeek">Review this week</h2>
+            <p class="subtle">Approve, rearrange, or ask for another suggestion.</p>
+          </div>
+          <button class="secondary-btn" id="approveWeek">Approve week</button>
+        </div>
+
+        <article class="card meal-plan-card">
+          <p class="card-label">WEEK AT A GLANCE</p>
+          <div id="mealPlanSummary" class="meal-plan-summary"></div>
+          <p class="subtle small meal-plan-help">Green = everything confirmed, yellow = 1–2 items, red = 3+ items.</p>
+        </article>
+
+        <article class="card tomorrow-prep-card">
+          <div class="section-title-row">
+            <div>
+              <p class="card-label">BEFORE BED</p>
+              <h3 id="tomorrowPrepTitle">Prep for tomorrow</h3>
+            </div>
+            <span id="tomorrowPrepStatus" class="prep-time-badge"></span>
+          </div>
+          <div id="tomorrowPrepList" class="prep-checklist"></div>
+        </article>
+
+        <div id="mealPlanEditor" class="meal-plan-editor"></div>
+      </section>
+
+      <section class="screen" data-screen="shopping">
+        <div class="section-heading shopping-heading">
+          <p class="eyebrow">SHOPPING</p><h2>Active shopping list</h2>
+          <p class="subtle">Grocery List + meal needs + inventory needs in one place. Purchased items disappear from this view.</p>
+        </div>
+        <article class="card quick-add-card">
+          <p class="card-label">QUICK ADD</p>
+          <div class="quick-add-grid">
+            <label>Item<input id="shoppingItem" type="text" placeholder="Add milk, notebooks, sunscreen…"></label>
+            <label>Quantity<input id="shoppingQty" type="text" placeholder="1"></label>
+            <label>Store<input id="shoppingStore" type="text" placeholder="Optional"></label>
+            <label>Category<input id="shoppingCategory" type="text" placeholder="Optional"></label>
+            <button id="addShoppingItem" class="primary-btn" type="button">Add item</button>
+          </div>
+          <p id="shoppingAddStatus" class="subtle small" aria-live="polite"></p>
+        </article>
+        <div id="shoppingActiveList" class="shopping-active-list"></div>
+      </section>
+
+      <section class="screen" data-screen="today">
+        <div class="section-heading">
+          <p class="eyebrow">TODAY</p>
+          <h2>Schedule and decisions</h2>
+        </div>
+        <article class="card">
+          <p class="card-label">SCHEDULE</p>
+          <div id="scheduleList" class="timeline"></div>
+        </article>
+        <article class="card">
+          <p class="card-label">TODAY'S DECISIONS</p>
+          <div id="decisionList" class="decision-list"></div>
+        </article>
+      </section>
+
+      <section class="screen" data-screen="house">
+        <div class="section-heading house-heading">
+          <div>
+            <p class="eyebrow">HOUSE</p>
+            <h2>Chores & home status</h2>
+          </div>
+          <div id="choreWeekLabel" class="subtle small"></div>
+        </div>
+        <div id="choreSummary" class="chore-summary"></div>
+        <div id="choreBoard" class="chore-board"></div>
+        <div class="section-heading house-systems-heading">
+          <div>
+            <p class="eyebrow">HOME SYSTEMS</p>
+            <h2>Stock & household status</h2>
+          </div>
+        </div>
+        <div id="houseGrid" class="house-grid"></div>
+      </section>
+
+      <section class="screen" data-screen="more">
+        <div class="section-heading">
+          <p class="eyebrow">MORE</p>
+          <h2>System controls</h2>
+        </div>
+        <article class="card">
+          <label for="apiUrl">Apps Script Web App URL</label>
+          <input id="apiUrl" type="url" placeholder="Paste your deployed Apps Script URL" />
+          <label for="weatherLocation">Weather city</label>
+          <input id="weatherLocation" type="text" placeholder="City, State" />
+          <div class="button-row">
+            <button id="saveApi" class="primary-btn">Save & refresh</button>
+          </div>
+          <p class="subtle small">Interactive devices may override this URL. Wall mode always uses the built-in live Santangelo OS endpoint.</p>
+        </article>
+      </section>
+    </main>
+
+
+    <div id="recipeModal" class="recipe-modal" aria-hidden="true">
+      <div class="recipe-backdrop" data-close-recipe></div>
+      <section class="recipe-panel" role="dialog" aria-modal="true" aria-labelledby="recipeTitle">
+        <div class="recipe-panel-header">
+          <div>
+            <p class="card-label">RECIPE</p>
+            <h2 id="recipeTitle">Recipe details</h2>
+          </div>
+          <button class="recipe-close" type="button" data-close-recipe aria-label="Close recipe">×</button>
+        </div>
+        <div id="recipeContent" class="recipe-content"><p class="subtle">Loading recipe…</p></div>
+      </section>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
+      <button class="nav-btn" data-target="meals"><span>🍽</span>Meals</button>
+      <button class="nav-btn" data-target="shopping"><span>🛒</span>Shop</button>
+      <button class="nav-btn" data-target="today"><span>▣</span>Today</button>
+      <button class="nav-btn" data-target="house"><span>⌂</span>House</button>
+      <button class="nav-btn" data-target="more"><span>•••</span>More</button>
+    </nav>
+  </div>
+
+  <script>
+    (function(){
+      var status=document.getElementById('systemStatus');
+      window.addEventListener('error',function(e){if(status){status.textContent='JS ERROR · '+(e.message||'script failed to load');status.setAttribute('data-connection','error');}});
+      window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
+    })();
+  </script>
+  <script src="app.js?v=0.9.1"></script>
+</body>
+</html>
