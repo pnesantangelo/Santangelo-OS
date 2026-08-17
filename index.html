@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=0.9.1" />
+  <link rel="stylesheet" href="styles.css?v=0.10.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -108,6 +108,8 @@
           <button class="secondary-btn" id="approveWeek">Approve week</button>
         </div>
 
+        <article class="card sunday-review-card"><div id="mealReviewPanel"><p class="subtle">Loading last week for review…</p></div></article>
+
         <article class="card meal-plan-card">
           <p class="card-label">WEEK AT A GLANCE</p>
           <div id="mealPlanSummary" class="meal-plan-summary"></div>
@@ -145,6 +147,12 @@
           <p id="shoppingAddStatus" class="subtle small" aria-live="polite"></p>
         </article>
         <div id="shoppingActiveList" class="shopping-active-list"></div>
+      </section>
+
+      <section class="screen" data-screen="tasks">
+        <div class="section-heading tasks-heading"><div><p class="eyebrow">TASKS</p><h2>My to-do list</h2><p class="subtle">Capture it quickly. Due dates, reminders, and projects can be added now or later.</p></div></div>
+        <article class="card task-quick-add"><p class="card-label">QUICK ADD</p><div class="task-quick-grid"><label>Task<input id="taskInput" type="text" placeholder="Call dentist about Nathan…"></label><label>Project<input id="taskProject" type="text" placeholder="Optional"></label><label>Priority<select id="taskPriority"><option>Normal</option><option>High</option><option>Low</option></select></label><label>Due<input id="taskDue" type="date"></label><label>Reminder<input id="taskReminder" type="datetime-local"></label><button id="addTask" class="primary-btn" type="button">Add task</button></div><p id="taskAddStatus" class="subtle small" aria-live="polite"></p></article>
+        <div id="taskSummary" class="task-summary"></div><div id="taskBoard" class="task-board"></div>
       </section>
 
       <section class="screen" data-screen="today">
@@ -218,6 +226,7 @@
       <button class="nav-btn active" data-target="home"><span>⌂</span>Home</button>
       <button class="nav-btn" data-target="meals"><span>🍽</span>Meals</button>
       <button class="nav-btn" data-target="shopping"><span>🛒</span>Shop</button>
+      <button class="nav-btn" data-target="tasks"><span>✓</span>Tasks</button>
       <button class="nav-btn" data-target="today"><span>▣</span>Today</button>
       <button class="nav-btn" data-target="house"><span>⌂</span>House</button>
       <button class="nav-btn" data-target="more"><span>•••</span>More</button>
@@ -231,6 +240,6 @@
       window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
     })();
   </script>
-  <script src="app.js?v=0.9.1"></script>
+  <script src="app.js?v=0.10.0"></script>
 </body>
 </html>
