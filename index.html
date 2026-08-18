@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#23364d" />
+  <meta name="application-name" content="Santangelo OS" />
+  <link rel="manifest" href="manifest.json?v=0.10.2a" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -194,6 +196,20 @@
           <p class="eyebrow">MORE</p>
           <h2>System controls</h2>
         </div>
+        <article class="card notification-card">
+          <p class="card-label">NOTIFICATIONS</p>
+          <h3>Android notification test</h3>
+          <p class="subtle">First prove this installed web app can display a Santangelo OS notification. This test does not send scheduled task reminders yet.</p>
+          <div class="notification-status-row">
+            <span id="notificationStatus" class="notification-status">Checking support…</span>
+          </div>
+          <div class="button-row notification-actions">
+            <button id="enableNotifications" class="primary-btn" type="button">Enable notifications</button>
+            <button id="testNotification" class="secondary-btn" type="button" disabled>Send test notification</button>
+          </div>
+          <p id="notificationHelp" class="subtle small" aria-live="polite"></p>
+        </article>
+
         <article class="card">
           <label for="apiUrl">Apps Script Web App URL</label>
           <input id="apiUrl" type="url" placeholder="Paste your deployed Apps Script URL" />
@@ -240,6 +256,6 @@
       window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
     })();
   </script>
-  <script src="app.js?v=0.10.2"></script>
+  <script src="app.js?v=0.10.2a"></script>
 </body>
 </html>

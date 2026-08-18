@@ -307,3 +307,67 @@ function goToScreen(target){document.querySelectorAll('.nav-btn').forEach(x=>x.c
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>goToScreen(b.dataset.target));
 byId('approveWeek').onclick=async()=>{try{byId('approveWeek').disabled=true;await apiAction('approveWeek');}catch(e){alert(e.message);}finally{byId('approveWeek').disabled=false;}};
 applyDisplayMode();byId('saveApi').onclick=()=>{localStorage.setItem('santangeloApiUrl',byId('apiUrl').value.trim());localStorage.setItem('santangeloWeatherLocation',byId('weatherLocation').value.trim());refreshWeather();refreshFromApi();};byId('resetReady').onclick=()=>{localStorage.removeItem('santangeloReady:'+String(data.departureKey||'current'));render();};byId('apiUrl').value=getApiBase();byId('weatherLocation').value=localStorage.getItem('santangeloWeatherLocation')||DEFAULT_WEATHER_LOCATION;byId('addShoppingItem')?.addEventListener('click',addShoppingItem);byId('addTask')?.addEventListener('click',addTask);byId('taskInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});byId('shoppingItem')?.addEventListener('keydown',e=>{if(e.key==='Enter')addShoppingItem();});updateClock();refreshWeather();refreshFromApi();setInterval(()=>loadModule('departure',{quiet:true}).catch(()=>{}),2*60*1000);setInterval(()=>loadModule('home',{quiet:true}).catch(()=>{}),5*60*1000);setInterval(()=>loadModule('calendar',{quiet:true}).catch(()=>{}),10*60*1000);setInterval(updateDepartureCountdown,30000);setInterval(updateClock,30000);setInterval(refreshWeather,60*60*1000);
+
+
+// v0.10.2a Android notification test
+let santangeloServiceWorkerRegistration=null;
+function notificationSupport(){
+ return 'Notification' in window && 'serviceWorker' in navigator;
+}
+function updateNotificationUi(message=''){
+ const status=byId('notificationStatus'),enable=byId('enableNotifications'),test=byId('testNotification'),help=byId('notificationHelp');
+ if(!status||!enable||!test||!help)return;
+ if(!notificationSupport()){
+  status.textContent='Not supported in this browser';status.className='notification-status is-blocked';enable.disabled=true;test.disabled=true;help.textContent='Open the installed Santangelo OS app in Chrome on Android.';return;
+ }
+ const permission=Notification.permission;
+ if(permission==='granted'){
+  status.textContent='Notifications enabled';status.className='notification-status is-ready';enable.textContent='Notifications enabled ✓';enable.disabled=true;test.disabled=!santangeloServiceWorkerRegistration;help.textContent=message||'Ready for a test notification on this device.';
+ }else if(permission==='denied'){
+  status.textContent='Notifications blocked';status.className='notification-status is-blocked';enable.textContent='Notifications blocked';enable.disabled=true;test.disabled=true;help.textContent='Android has blocked notifications for Santangelo OS. Re-enable them in the app/site notification settings, then reopen the app.';
+ }else{
+  status.textContent='Notifications not enabled';status.className='notification-status';enable.textContent='Enable notifications';enable.disabled=false;test.disabled=true;help.textContent=message||'Tap Enable notifications, then choose Allow when Android asks.';
+ }
+}
+async function registerSantangeloServiceWorker(){
+ if(!notificationSupport()){updateNotificationUi();return null;}
+ try{
+  santangeloServiceWorkerRegistration=await navigator.serviceWorker.register('./service-worker.js?v=0.10.2a',{scope:'./'});
+  await navigator.serviceWorker.ready;
+  updateNotificationUi('Notification service is ready on this device.');
+  return santangeloServiceWorkerRegistration;
+ }catch(err){
+  console.error('Service worker registration failed',err);
+  const help=byId('notificationHelp');if(help)help.textContent='Could not start notification service: '+err.message;
+  return null;
+ }
+}
+async function enableSantangeloNotifications(){
+ if(!notificationSupport()){updateNotificationUi();return;}
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission==='granted'&&!santangeloServiceWorkerRegistration)await registerSantangeloServiceWorker();
+  updateNotificationUi(permission==='granted'?'Permission granted. Send the test notification next.':'');
+ }catch(err){
+  const help=byId('notificationHelp');if(help)help.textContent='Could not request notification permission: '+err.message;
+ }
+}
+async function sendSantangeloTestNotification(){
+ try{
+  if(Notification.permission!=='granted'){updateNotificationUi();return;}
+  const reg=santangeloServiceWorkerRegistration||await registerSantangeloServiceWorker();
+  if(!reg)throw new Error('Notification service is not ready.');
+  await reg.showNotification('Santangelo OS', {
+   body:'Test successful — this phone can receive Santangelo OS notifications.',
+   tag:'santangelo-test',
+   renotify:true,
+   data:{url:'./?screen=tasks'}
+  });
+  updateNotificationUi('Test sent. You should see a Santangelo OS notification now.');
+ }catch(err){
+  const help=byId('notificationHelp');if(help)help.textContent='Could not show test notification: '+err.message;
+ }
+}
+byId('enableNotifications')?.addEventListener('click',enableSantangeloNotifications);
+byId('testNotification')?.addEventListener('click',sendSantangeloTestNotification);
+registerSantangeloServiceWorker();

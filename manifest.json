@@ -1,0 +1,10 @@
+{
+  "name": "Santangelo OS",
+  "short_name": "Santangelo OS",
+  "description": "Santangelo family command center",
+  "start_url": "./?mode=app",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f1e8",
+  "theme_color": "#23364d"
+}
