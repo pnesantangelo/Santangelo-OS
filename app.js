@@ -401,7 +401,7 @@ async function connectSantangeloPush(){
      santangeloOneSignal=OneSignal;
      const oneSignalDir=new URL('./push/onesignal/',location.href);
      const oneSignalScope=oneSignalDir.pathname;
-     const oneSignalWorkerPath=new URL('OneSignalSDKWorker.js',oneSignalDir).pathname;
+     const oneSignalWorkerPath=new URL('OneSignalSDKWorker.js',oneSignalDir).pathname.replace(/^\/+/, '');
      await OneSignal.init({appId:cfg.appId,serviceWorkerPath:oneSignalWorkerPath,serviceWorkerParam:{scope:oneSignalScope},autoResubscribe:true});
      await OneSignal.login(cfg.externalId||'santangelo-primary');
      if(Notification.permission!=='granted')await OneSignal.Notifications.requestPermission();
