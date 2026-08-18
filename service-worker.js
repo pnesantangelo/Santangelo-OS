@@ -1,4 +1,4 @@
-const CACHE_NAME = 'santangelo-os-v0.10.2a';
+const CACHE_NAME = 'santangelo-os-v0.10.2b';
 const APP_SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', event => {

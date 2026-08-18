@@ -332,7 +332,7 @@ function updateNotificationUi(message=''){
 async function registerSantangeloServiceWorker(){
  if(!notificationSupport()){updateNotificationUi();return null;}
  try{
-  santangeloServiceWorkerRegistration=await navigator.serviceWorker.register('./service-worker.js?v=0.10.2a',{scope:'./'});
+  santangeloServiceWorkerRegistration=await navigator.serviceWorker.register('./service-worker.js?v=0.10.2b',{scope:'./'});
   await navigator.serviceWorker.ready;
   updateNotificationUi('Notification service is ready on this device.');
   return santangeloServiceWorkerRegistration;
@@ -371,3 +371,51 @@ async function sendSantangeloTestNotification(){
 byId('enableNotifications')?.addEventListener('click',enableSantangeloNotifications);
 byId('testNotification')?.addEventListener('click',sendSantangeloTestNotification);
 registerSantangeloServiceWorker();
+
+
+// v0.10.2b real push delivery via OneSignal
+let santangeloOneSignal=null;
+let santangeloPushConnected=false;
+async function fetchPushConfig(){
+ const base=getApiBase();if(!base)throw new Error('API URL missing');
+ const u=new URL(base);u.searchParams.set('action','pushconfig');u.searchParams.set('_ts',Date.now());
+ const r=await fetch(u.toString(),{cache:'no-store',credentials:'omit'});if(!r.ok)throw new Error('HTTP '+r.status);
+ const j=await r.json();if(j.error)throw new Error(j.message||'Push configuration unavailable');return j;
+}
+function updatePushButtons(message=''){
+ const connect=byId('connectPush'),serverTest=byId('backendTestNotification'),help=byId('notificationHelp');
+ if(connect){connect.textContent=santangeloPushConnected?'Reminder delivery connected ✓':'Connect reminder delivery';connect.disabled=santangeloPushConnected;}
+ if(serverTest)serverTest.disabled=!santangeloPushConnected;
+ if(help&&message)help.textContent=message;
+}
+async function connectSantangeloPush(){
+ try{
+  updatePushButtons('Connecting this device to scheduled reminder delivery…');
+  const cfg=await fetchPushConfig();
+  if(!cfg.appId)throw new Error('OneSignal App ID has not been configured in Apps Script yet.');
+  window.OneSignalDeferred=window.OneSignalDeferred||[];
+  await new Promise((resolve,reject)=>{
+   let settled=false;
+   window.OneSignalDeferred.push(async function(OneSignal){
+    try{
+     santangeloOneSignal=OneSignal;
+     const oneSignalScope=new URL('./push/onesignal/',location.href).pathname;
+     await OneSignal.init({appId:cfg.appId,serviceWorkerPath:'push/onesignal/OneSignalSDKWorker.js',serviceWorkerParam:{scope:oneSignalScope},autoResubscribe:true});
+     await OneSignal.login(cfg.externalId||'santangelo-primary');
+     if(Notification.permission!=='granted')await OneSignal.Notifications.requestPermission();
+     if(OneSignal.User&&OneSignal.User.PushSubscription&&!OneSignal.User.PushSubscription.optedIn)await OneSignal.User.PushSubscription.optIn();
+     santangeloPushConnected=true;settled=true;updatePushButtons('Connected. Scheduled task reminders can now reach this device even when the app is closed.');resolve();
+    }catch(err){settled=true;reject(err);}
+   });
+   setTimeout(()=>{if(!settled)reject(new Error('Push service did not finish loading. Check the OneSignal App ID and service-worker path.'));},15000);
+  });
+ }catch(err){console.error('Push connection failed',err);santangeloPushConnected=false;updatePushButtons('Could not connect reminder delivery: '+err.message);}
+}
+async function sendBackendTestNotification(){
+ const btn=byId('backendTestNotification');
+ try{if(btn){btn.disabled=true;btn.textContent='Sending…';}await apiAction('testpush',{});updatePushButtons('Server test sent. It should arrive even after you leave Santangelo OS.');}
+ catch(err){updatePushButtons('Server test failed: '+err.message);}
+ finally{if(btn){btn.disabled=!santangeloPushConnected;btn.textContent='Send server test';}}
+}
+byId('connectPush')?.addEventListener('click',connectSantangeloPush);
+byId('backendTestNotification')?.addEventListener('click',sendBackendTestNotification);

@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#23364d" />
   <meta name="application-name" content="Santangelo OS" />
-  <link rel="manifest" href="manifest.json?v=0.10.2a" />
+  <link rel="manifest" href="manifest.json?v=0.10.2b" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Santangelo OS</title>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -198,14 +199,16 @@
         </div>
         <article class="card notification-card">
           <p class="card-label">NOTIFICATIONS</p>
-          <h3>Android notification test</h3>
-          <p class="subtle">First prove this installed web app can display a Santangelo OS notification. This test does not send scheduled task reminders yet.</p>
+          <h3>Task reminder delivery</h3>
+          <p class="subtle">Android notification permission is working. Connect this device to the reminder service so Tasks can notify you even when Santangelo OS is closed.</p>
           <div class="notification-status-row">
             <span id="notificationStatus" class="notification-status">Checking support…</span>
           </div>
           <div class="button-row notification-actions">
             <button id="enableNotifications" class="primary-btn" type="button">Enable notifications</button>
-            <button id="testNotification" class="secondary-btn" type="button" disabled>Send test notification</button>
+            <button id="testNotification" class="secondary-btn" type="button" disabled>Send local test</button>
+            <button id="connectPush" class="secondary-btn" type="button">Connect reminder delivery</button>
+            <button id="backendTestNotification" class="secondary-btn" type="button" disabled>Send server test</button>
           </div>
           <p id="notificationHelp" class="subtle small" aria-live="polite"></p>
         </article>
@@ -256,6 +259,6 @@
       window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
     })();
   </script>
-  <script src="app.js?v=0.10.2a"></script>
+  <script src="app.js?v=0.10.2b"></script>
 </body>
 </html>
