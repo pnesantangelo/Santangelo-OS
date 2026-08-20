@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#23364d" />
   <meta name="application-name" content="Santangelo OS" />
-  <link rel="manifest" href="manifest.json?v=0.10.2b" />
+  <link rel="manifest" href="manifest.json?v=0.10.2b3" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=0.10.2" />
+  <link rel="stylesheet" href="styles.css?v=0.10.2b3" />
 </head>
 <body>
   <div class="app-shell">
@@ -154,7 +154,7 @@
 
       <section class="screen" data-screen="tasks">
         <div class="section-heading tasks-heading"><div><p class="eyebrow">TASKS</p><h2>My to-do list</h2><p class="subtle">Capture it quickly. Due dates, reminders, and projects can be added now or later.</p></div></div>
-        <article class="card task-quick-add"><p class="card-label">QUICK ADD</p><div class="task-quick-grid"><label>Task<input id="taskInput" type="text" placeholder="Call dentist about Nathan…"></label><label>Project<input id="taskProject" type="text" placeholder="Optional"></label><label>Priority<select id="taskPriority"><option>Normal</option><option>High</option><option>Low</option></select></label><label>Due<input id="taskDue" type="date"></label><label>Reminder<input id="taskReminder" type="datetime-local"></label><button id="addTask" class="primary-btn" type="button">Add task</button></div><p id="taskAddStatus" class="subtle small" aria-live="polite"></p></article>
+        <article class="card task-quick-add"><p class="card-label">QUICK ADD</p><div class="task-quick-grid"><label>Task<input id="taskInput" type="text" placeholder="Call dentist about Nathan…"></label><label>Project<input id="taskProject" type="text" placeholder="Optional"></label><label>Area<input id="taskArea" type="text" placeholder="School, Home, Admin…"></label><label>Priority<select id="taskPriority"><option>Normal</option><option>High</option><option>Low</option></select></label><label>Due<input id="taskDue" type="date"></label><label>Reminder<input id="taskReminder" type="datetime-local"></label><button id="addTask" class="primary-btn" type="button">Add task</button></div><p id="taskAddStatus" class="subtle small" aria-live="polite"></p></article>
         <div id="taskSummary" class="task-summary"></div><div id="taskBoard" class="task-board"></div>
       </section>
 
@@ -259,6 +259,6 @@
       window.addEventListener('unhandledrejection',function(e){if(status&&status.textContent.indexOf('LIVE')!==0){var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unknown');status.textContent='JS ERROR · '+msg;status.setAttribute('data-connection','error');}});
     })();
   </script>
-  <script src="app.js?v=0.10.2b2"></script>
+  <script src="app.js?v=0.10.2b3"></script>
 </body>
 </html>

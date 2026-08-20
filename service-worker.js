@@ -1,5 +1,5 @@
-const CACHE_NAME = 'santangelo-os-v0.10.2b';
-const APP_SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
+const CACHE_NAME = 'santangelo-os-v0.10.2b3';
+const APP_SHELL = ['./', './index.html?v=0.10.2b3', './styles.css?v=0.10.2b3', './app.js?v=0.10.2b3', './manifest.json?v=0.10.2b3'];
 
 self.addEventListener('install', event => {
   self.skipWaiting();

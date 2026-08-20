@@ -1,5 +1,7 @@
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwpPnSSKGZJ5uhQ7wRNAkML6jsZugZ2IFrwil6v4naXYmFgQKEGS8EUmONSaPNwybAk/exec';
 const DEFAULT_WEATHER_LOCATION='Yorba Linda, CA';
+const CURRENT_FRONTEND_VERSION='0.10.2b3';
+const MIN_CURRENT_API_VERSION='0.10.2';
 
 const blankData={apiVersion:'0.10.2',generatedAt:new Date().toISOString(),state:'Connecting',dayLoad:'',familyFocus:'',whatCanWait:'',nextDeparture:{title:'Connecting to Santangelo OS',time:'',leaveText:''},departureKey:'connecting',dinner:{plan:'Loading dinner…',note:''},readiness:[],people:[],schedule:[],decisions:[],shopping:{active:[],buyNow:[],buySoon:[],dontBuy:[],byStore:{}},homeHealth:{percent:0,completed:0,total:0,label:'Loading chores…'},chores:{weekLabel:'This week',daily:[],deepClean:[],weekly:[],asNeeded:[],summary:{dailyDone:0,dailyTotal:0,weeklyDone:0,weeklyTotal:0,deepCleanDue:0}},tasks:{today:[],upcoming:[],waiting:[],someday:[],completed:[],summary:{open:0,dueToday:0,overdue:0}},mealReview:{weekOf:'',days:[],complete:false},householdHealth:[],house:[],calendar4Weeks:{startDate:'',endDate:'',days:[]},weeklyMealPlan:{weekOf:'',status:'',days:[]}};
 function cloneData(value){return JSON.parse(JSON.stringify(value));}
@@ -221,9 +223,9 @@ function renderChores(){
  byId('choreBoard').innerHTML=choreSectionHtml('Deep Clean Focus','Most overdue first — aim for one focus block on normal days',c.deepClean||[],'deep-clean-section')+choreSectionHtml('Daily','Resets every day',c.daily||[])+choreSectionHtml('This week','Weekly progress resets Monday',c.weekly||[])+choreSectionHtml('As needed','Available anytime; not counted against Home Health',c.asNeeded||[]);
  document.querySelectorAll('[data-chore-complete],[data-chore-again]').forEach(btn=>btn.addEventListener('click',async()=>{const row=btn.closest('[data-chore-id]'),chore=[...(c.deepClean||[]),...(c.daily||[]),...(c.weekly||[]),...(c.asNeeded||[])].find(x=>String(x.id)===String(row.dataset.choreId));const person=row.querySelector('[data-chore-person]').value;if(!person){alert('Choose who completed the chore first.');return;}try{btn.disabled=true;btn.textContent='Saving…';await apiAction(chore.deepClean?'completeMaintenance':'completeChore',chore.deepClean?{row:chore.maintenanceRow,person:person}:{chore:chore.name,person:person});}catch(e){alert('Could not save chore: '+e.message);btn.disabled=false;btn.textContent='✓ Complete';}}));
 }
-function taskCardHtml(t){const due=t.dueDate?`Due ${esc(t.dueDate)}`:'No due date',rem=t.reminderAt?` · Reminder ${esc(t.reminderAt)}`:'';return `<article class="card task-row ${t.overdue?'task-overdue':''}" data-task-row="${t.row}"><div><p class="card-label">${esc(t.project||t.area||'TASK')}</p><h3>${esc(t.task)}</h3><p class="subtle small">${due}${rem}${t.waitingOn?` · Waiting on ${esc(t.waitingOn)}`:''}</p>${t.nextAction?`<p class="task-next"><strong>Next:</strong> ${esc(t.nextAction)}</p>`:''}</div><div class="task-actions"><span class="task-priority">${esc(t.priority||'Normal')}</span><button class="primary-btn" data-task-complete type="button">Done ✓</button></div></article>`;}
+function taskCardHtml(t){const due=t.dueDate?`Due ${esc(t.dueDate)}`:'No due date',rem=t.reminderAt?` · Reminder ${esc(t.reminderAt)}`:'',meta=[t.project?`Project: ${esc(t.project)}`:'',t.area?`Area: ${esc(t.area)}`:''].filter(Boolean).join(' · ');return `<article class="card task-row ${t.overdue?'task-overdue':''}" data-task-row="${t.row}"><div><p class="card-label">${esc(t.project||t.area||'TASK')}</p><h3>${esc(t.task)}</h3>${meta?`<p class="task-project-area">${meta}</p>`:''}<p class="subtle small">${due}${rem}${t.waitingOn?` · Waiting on ${esc(t.waitingOn)}`:''}</p>${t.nextAction?`<p class="task-next"><strong>Next:</strong> ${esc(t.nextAction)}</p>`:''}</div><div class="task-actions"><span class="task-priority">${esc(t.priority||'Normal')}</span><button class="primary-btn" data-task-complete type="button">Done ✓</button></div></article>`;}
 function renderTasks(){const t=data.tasks||{today:[],upcoming:[],waiting:[],someday:[],summary:{}},root=byId('taskBoard');if(!root)return;const s=t.summary||{};byId('taskSummary').innerHTML=`<article class="card task-summary-card"><p class="card-label">OPEN</p><h3>${Number(s.open||0)}</h3></article><article class="card task-summary-card"><p class="card-label">DUE TODAY</p><h3>${Number(s.dueToday||0)}</h3></article><article class="card task-summary-card"><p class="card-label">OVERDUE</p><h3>${Number(s.overdue||0)}</h3></article>`;const sec=(name,items,empty)=>`<section class="task-section"><h3>${name}</h3><div class="task-list">${items.length?items.map(taskCardHtml).join(''):`<div class="chore-empty">${empty}</div>`}</div></section>`;root.innerHTML=sec('Today',t.today||[],'Nothing due today.')+sec('Upcoming',t.upcoming||[],'No dated tasks coming up.')+sec('Waiting / Delegated',t.waiting||[],'Nothing waiting on someone else.')+sec('Someday / Undated',t.someday||[],'No undated tasks.');document.querySelectorAll('[data-task-complete]').forEach(btn=>btn.addEventListener('click',async()=>{const row=Number(btn.closest('[data-task-row]').dataset.taskRow);try{btn.disabled=true;await apiAction('completeTask',{row});}catch(e){alert('Could not complete task: '+e.message);btn.disabled=false;}}));}
-async function addTask(){const task=byId('taskInput').value.trim();if(!task)return;const body={task,project:byId('taskProject').value.trim(),priority:byId('taskPriority').value,dueDate:byId('taskDue').value,reminderAt:byId('taskReminder').value,source:'Web App'};const status=byId('taskAddStatus');try{status.textContent='Saving…';await apiAction('addTask',body);byId('taskInput').value='';byId('taskDue').value='';byId('taskReminder').value='';status.textContent='Added.';}catch(e){status.textContent='Could not add: '+e.message;}}
+async function addTask(){const task=byId('taskInput').value.trim();if(!task)return;const body={task,project:byId('taskProject').value.trim(),area:byId('taskArea')?.value.trim()||'',priority:byId('taskPriority').value,dueDate:byId('taskDue').value,reminderAt:byId('taskReminder').value,source:'Web App'};const status=byId('taskAddStatus');try{status.textContent='Saving…';await apiAction('addTask',body);byId('taskInput').value='';byId('taskProject').value='';if(byId('taskArea'))byId('taskArea').value='';byId('taskDue').value='';byId('taskReminder').value='';status.textContent='Added.';}catch(e){status.textContent='Could not add: '+e.message;}}
 
 function updateClock(){const el=byId('currentTime');if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}
 function weatherCodeLabel(code){if(code===0)return'Sunny';if(code<=3)return'Partly cloudy';if(code<=48)return'Foggy';if(code<=67)return'Rain';if(code<=77)return'Snow';if(code<=82)return'Showers';if(code<=99)return'Thunderstorms';return'Weather';}
@@ -281,15 +283,33 @@ async function fetchModuleAttempt(base,action,timeoutMs){
 }
 async function loadModule(action,{quiet=false,timeout=60000}={}){
  if(moduleLoads[action])return moduleLoads[action];const base=getApiBase();if(!base)throw new Error('API URL missing');
- moduleLoads[action]=(async()=>{try{if(!quiet)setSystemStatus('LOADING '+action.toUpperCase()+'…','connecting');const j=await fetchModuleAttempt(base,action,timeout);mergePayload(j);if(!quiet)setSystemStatus('LIVE v'+(j.apiVersion||data.apiVersion),'live');return j;}finally{delete moduleLoads[action];}})();
+ moduleLoads[action]=(async()=>{try{if(!quiet)setSystemStatus('LOADING '+action.toUpperCase()+'…','connecting');const j=await fetchModuleAttempt(base,action,timeout);mergePayload(j);if(!quiet)setSystemStatus('LIVE v'+(j.apiVersion||data.apiVersion)+' · UI '+CURRENT_FRONTEND_VERSION,'live');return j;}finally{delete moduleLoads[action];}})();
  return moduleLoads[action];
 }
 function scheduleReconnect(delayMs=60000){if(reconnectTimer)clearTimeout(reconnectTimer);reconnectTimer=setTimeout(()=>{reconnectTimer=null;refreshFromApi();},delayMs);}
+function versionParts(v){return String(v||'').replace(/^v/i,'').split(/[^0-9]+/).filter(Boolean).map(Number);}
+function versionAtLeast(v,min){const a=versionParts(v),b=versionParts(min),n=Math.max(a.length,b.length);for(let i=0;i<n;i++){const x=a[i]||0,y=b[i]||0;if(x>y)return true;if(x<y)return false;}return true;}
+async function migrateStaleApiEndpointIfNeeded(homePayload){
+ const saved=(localStorage.getItem('santangeloApiUrl')||'').trim();
+ if(!saved||saved===DEFAULT_API_URL||versionAtLeast(homePayload?.apiVersion,MIN_CURRENT_API_VERSION))return homePayload;
+ try{
+  const newer=await fetchModuleAttempt(DEFAULT_API_URL,'home',30000);
+  if(versionAtLeast(newer?.apiVersion,MIN_CURRENT_API_VERSION)&&!versionAtLeast(homePayload?.apiVersion,MIN_CURRENT_API_VERSION)){
+   localStorage.setItem('santangeloApiUrl',DEFAULT_API_URL);
+   const apiInput=byId('apiUrl');if(apiInput)apiInput.value=DEFAULT_API_URL;
+   mergePayload(newer);
+   setSystemStatus('LIVE v'+(newer.apiVersion||data.apiVersion)+' · endpoint updated','live');
+   return newer;
+  }
+ }catch(e){console.warn('Could not test current default API endpoint',e);}
+ return homePayload;
+}
 async function refreshFromApi(){
  try{
   setSystemStatus('CONNECTING · loading home','connecting');
-  await loadModule('home',{quiet:true,timeout:60000});
-  setSystemStatus('LIVE v'+data.apiVersion,'live');
+  const homePayload=await loadModule('home',{quiet:true,timeout:60000});
+  await migrateStaleApiEndpointIfNeeded(homePayload);
+  setSystemStatus('LIVE v'+data.apiVersion+' · UI '+CURRENT_FRONTEND_VERSION,'live');
   // Calendar is the only second module Home needs. Load it independently so it cannot block the rest of Home.
   loadModule('calendar',{quiet:true,timeout:60000}).catch(e=>console.warn('Calendar module failed',e));
   if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
